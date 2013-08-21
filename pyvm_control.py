@@ -79,7 +79,11 @@ def start(args, uri=__uri__):
     try:
         connection = libvirt.open(uri)
         if args.__len__() == 1:
-            connection.lookupByName(args[0]).create()
+            if args[0] == "*":                                                                                          # Start all VM
+                for domain_name in get_offline_domains():
+                    connection.lookupByName(domain_name).create()
+            else:
+                connection.lookupByName(args[0]).create()
         else:
             usage()
     except libvirt.libvirtError:
