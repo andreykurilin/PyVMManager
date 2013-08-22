@@ -1,21 +1,23 @@
 #!/usr/bin/env python
 import os
 import subprocess
+import domain
 
 __author__ = 'akurilin'
 
 
-class Disk(object):
+class disk(object):
     valid_types = ("file", "block", "dir", "network", "volume")
     valid_devices = ("floppy", "disk", "cdrom", "lum")
 
     def __init__(self, type, device, source_file, target_dev=None,
                  driver_type=None):
-        if type not in Disk.valid_types:
-            raise Disk.IllegalArgumentError(Disk.valid_types, type)
+        if type not in disk.valid_types:
+            raise domain.IllegalArgumentError(disk.valid_types, type)
         self.type = type
-        if device is not None and type not in Disk.valid_devices:
-            raise Disk.IllegalArgumentError(Disk.valid_devices, device)
+        if device is not None and device not in disk.valid_devices:
+            print ("asd")
+            raise domain.IllegalArgumentError(disk.valid_devices, device)
         self.device = device
         self.source_file = source_file
         if device == "cdrom":
@@ -31,11 +33,11 @@ class Disk(object):
 
     @staticmethod
     def cdrom_init(source_file):
-        return Disk("block", "cdrom", source_file)
+        return disk("block", "cdrom", source_file)
 
     @staticmethod
     def disk_init(source_file):
-        return Disk("file", "disk", source_file)
+        return disk("file", "disk", source_file)
 
     def get_xml(self):
         child = [{"name": "driver",
@@ -66,14 +68,3 @@ class Disk(object):
 
     def __str__(self):
         return "Disk: " + self.type + "; " + self.device
-
-    class IllegalArgumentError(ValueError):
-        def __init__(self, valid_args, invalid_arg):
-            self.valid_args = valid_args
-            self.invalid_arg = invalid_arg
-
-        def __str__(self):
-            return " Illegal argument \"" \
-                   + self.invalid_arg + "\". Allowed arguments: " \
-                   + str(self.valid_args).replace("(", "").replace(")", "") \
-                   + "."

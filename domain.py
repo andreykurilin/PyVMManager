@@ -3,8 +3,8 @@
 import libvirt
 import uuid as id
 import xml.etree.cElementTree as ET
-import Disk
-from Network import Network
+from disk import disk
+from network import Network
 from xml_utils import *
 
 
@@ -36,13 +36,13 @@ class Domain(object):
 
     def add_disk(self, file, device):
         if device == "cdrom":
-            self.disks.append(Disk.cdrom_init(file))
+            self.disks.append(disk.cdrom_init(file))
         elif device == "disk":
-            self.disks.append(Disk.disk_init(file))
+            self.disks.append(disk.disk_init(file))
 
-    def add_network(self, network_type="network", network="default",
+    def add_network(self, type="network", net_name="default",
                     mac_address=None):
-        self.nets.append(Network(network_type, network, mac_address).get_xml())
+        self.nets.append(Network(type, net_name, mac_address))
 
     def _add_sub_element_to_xml(self, parent, name, text=None, attrib=None):
         child = ET.SubElement(parent, name)
@@ -67,14 +67,14 @@ class Domain(object):
         devices["child"].append(
             {"name": "console", "attrib": {"type": "pty"}, "child": [
                 {"name": "serial",
-                 "attrib": {"type": "serial", "port": "0"}}]},
-            {"name": "input", "attrib": {"type": "mouse", "bus": "ps2"}},
-            {"name": "graphics",
-             "attrib": {"type": "vnc", "port": "-1", "autoport": "yes"},
-             "child": [
-                 {"name": "model",
-                  "attrib": {"type": "cirrus", "vram": "9216", "heads": "1"}}
-             ]})
+                 "attrib": {"type": "serial", "port": "0"}}]})
+        devices["child"].append(
+            {"name": "input", "attrib": {"type": "mouse", "bus": "ps2"}})
+        devices["child"].append({"name": "graphics",
+                                 "attrib": {"type": "vnc", "port": "-1",
+                                            "autoport": "yes"}, "child": [
+            {"name": "model",
+             "attrib": {"type": "cirrus", "vram": "9216", "heads": "1"}}]})
 
         return devices
 
@@ -115,3 +115,15 @@ class Domain(object):
         connection = libvirt.open(uri)
         connection.defineXML(xml_to_string(self.get_xml()))
         connection.close()
+
+
+class IllegalArgumentError(ValueError):
+    def __init__(self, valid_args, invalid_arg):
+        self.valid_args = valid_args
+        self.invalid_arg = invalid_arg
+
+    def __str__(self):
+        return " Illegal argument \"" \
+               + self.invalid_arg + "\". Allowed arguments: " \
+               + str(self.valid_args).replace("(", "").replace(")", "") \
+               + "."
