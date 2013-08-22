@@ -1,11 +1,14 @@
 #!/usr/bin/env python
+import libvirt
 import subprocess
-
-__author__ = 'akurilin'
 import uuid as id
 import os
+import xml.etree.cElementTree as ET
 from virtinst.util import randomMAC
-from virtinst.util import randomUUID
+
+
+__author__ = 'akurilin'
+__uri__ = "qemu:///system"
 
 
 class Domain(object):
@@ -30,111 +33,64 @@ class Domain(object):
         self.disk = Disk(source_file, source_file_type)
         self.net = Network(network_type, network, mac_address)
 
-    def get_xml(self):
-        import xml.etree.cElementTree as ET
+    def __add_sub_element_to_xml__(self, parent, name, text=None, attrib=None):
+        child = ET.SubElement(parent, name)
+        if text is not None:
+            child.text = text
+        if attrib is not None:
+            for key in attrib.keys():
+                child.set(key, attrib[key])
+        return child
 
+    def get_xml(self):
         root = ET.Element("domain")
         root.set("type", self.domain_type)
 
-        name = ET.SubElement(root, "name")
-        name.text = self.name
-
-        uuid = ET.SubElement(root, "uuid")
-        uuid.text = str(self.uuid)
-
-        memory = ET.SubElement(root, "memory")
-        memory.set("unit", "KiB")
-        memory.text = str(self.memory)
-
-        cur_memory = ET.SubElement(root, "currentMemory")
-        cur_memory.set("unit", "KiB")
-        cur_memory.text = str(self.memory)
-
-        vcpu = ET.SubElement(root, "vcpu")
-        vcpu.text = str(self.vcpu)
-
+        self.__add_sub_element_to_xml__(root, "name", text=self.name)
+        self.__add_sub_element_to_xml__(root, "uuid", text=str(self.uuid))
+        self.__add_sub_element_to_xml__(root, "memory", text=str(self.memory), attrib={"unit": "KiB"})
+        self.__add_sub_element_to_xml__(root, "currentMemory", text=str(self.memory), attrib={"unit": "KiB"})
+        self.__add_sub_element_to_xml__(root, "vcpu", text=str(self.vcpu))
         # Start configure OS
-        os = ET.SubElement(root, "os")
-        os_type = ET.SubElement(os, "type")
-        os_type.set("arch", self.type_arch)
-        os_type.set("machine", self.type_machine)
-        os_type.text = self.os_type
-
-        boot = ET.SubElement(os, "boot")
-        boot.set("dev", "hd")
+        os = self.__add_sub_element_to_xml__(root, "os")
+        self.__add_sub_element_to_xml__(os, "type", text=self.os_type,
+                                        attrib={"arch": self.type_arch, "machine": self.type_machine})
+        self.__add_sub_element_to_xml__(os, "boot", attrib={"dev": "hd"})
         # End configure OS
-
-        features = ET.SubElement(root, "features")
-        ET.SubElement(features, "acpi")
-        ET.SubElement(features, "apic")
-        ET.SubElement(features, "pae")
-
-        clock = ET.SubElement(root, "clock")
-        clock.set("offset", self.clock_offset)
-
-        on_poweroff = ET.SubElement(root, "on_poweroff")
-        on_poweroff.text = self.activity["on_poweroff"]
-
-        on_reboot = ET.SubElement(root, "on_reboot")
-        on_reboot.text = self.activity["on_reboot"]
-
-        on_crash = ET.SubElement(root, "on_crash")
-        on_crash.text = self.activity["on_crash"]
-
-        devices = ET.SubElement(root, "devices")
-
-        emulator = ET.SubElement(devices, "emulator")
-        emulator.text = self.emulator
-
+        # Start configure features
+        features = self.__add_sub_element_to_xml__(root, "features")
+        self.__add_sub_element_to_xml__(features, "acpi")
+        self.__add_sub_element_to_xml__(features, "apic")
+        self.__add_sub_element_to_xml__(features, "pae")
+        # End configure features
+        self.__add_sub_element_to_xml__(root, "clock", attrib={"offset": self.clock_offset})
+        self.__add_sub_element_to_xml__(root, "on_poweroff", text=self.activity["on_poweroff"])
+        self.__add_sub_element_to_xml__(root, "on_reboot", text=self.activity["on_reboot"])
+        self.__add_sub_element_to_xml__(root, "on_crash", text=self.activity["on_crash"])
+        # Start configure Devices
+        devices = self.__add_sub_element_to_xml__(root, "devices")
+        self.__add_sub_element_to_xml__(devices, "emulator", self.emulator)
         # Start configure Disk
-        disk = ET.SubElement(devices, "disk")
-        disk.set("type", "file")
-        disk.set("device", "disk")
-
-        driver = ET.SubElement(disk, "driver")
-        driver.set("name", self.disk.driver_name)
-        driver.set("type", self.disk.source_file_type)
-
-        source_img = ET.SubElement(disk, "source")
-        source_img.set("file", self.disk.source_file)
-
-        target = ET.SubElement(disk, "target")
-        target.set("dev", self.disk.target["dev"])
-        target.set("bus", self.disk.target["bus"])
+        disk = self.__add_sub_element_to_xml__(root, "disk", attrib={"type": "file", "device": "disk"})
+        self.__add_sub_element_to_xml__(disk, "driver",
+                                        attrib={"name": self.disk.driver_name, "type": self.disk.source_file_type})
+        self.__add_sub_element_to_xml__(disk, "source", attrib={"file": self.disk.source_file})
+        self.__add_sub_element_to_xml__(disk, "target",
+                                        attrib={"dev": self.disk.target["dev"], "bus": self.disk.source_file_type})
         # End configure Disk
-
         # Start configure Network
-        interface = ET.SubElement(devices, "interface")
-        interface.set("type", self.net.type)
-
-        mac = ET.SubElement(interface, "mac")
-        mac.set("address", self.net.mac_address)
-
-        source = ET.SubElement(interface, "source")
-        source.set("network", self.net.network)
+        interface = self.__add_sub_element_to_xml__(devices, "interface", attrib={"type": self.net.type})
+        self.__add_sub_element_to_xml__(interface, "mac", attrib={"address": self.net.mac_address})
+        self.__add_sub_element_to_xml__(interface, "source", attrib={"network": self.net.network})
         # End configure Network
-
-        console = ET.SubElement(devices, "console")
-        console.set("type", "pty")
-
-        target = ET.SubElement(console, "target")
-        target.set("type", "serial")
-        target.set("port", "0")
-
-        input = ET.SubElement(devices, "input")
-        input.set("type", "mouse")
-        input.set("bus", "ps2")
-
-        graphics = ET.SubElement(devices, "graphics")
-        graphics.set("type", "vnc")
-        graphics.set("port", "-1")
-        graphics.set("autoport", "yes")
-
-        video = ET.SubElement(devices, "video")
-        model = ET.SubElement(video, "model")
-        model.set("type", "cirrus")
-        model.set("vram", "9216")
-        model.set("heads", "1")
+        # Start configure extra settings
+        console = self.__add_sub_element_to_xml__(devices, "console", attrib={"type": "pty"})
+        self.__add_sub_element_to_xml__(console, "target", attrib={"type": "serial", "port": "0"})
+        self.__add_sub_element_to_xml__(devices, "input", attrib={"type": "mouse", "bus": "ps2"})
+        self.__add_sub_element_to_xml__(devices, "graphics", attrib={"type": "vnc", "port": "-1", "autoport": "yes"})
+        video = self.__add_sub_element_to_xml__(devices, "video")
+        self.__add_sub_element_to_xml__(video, "model", attrib={"type": "cirrus", "vram": "9216", "heads": "1"})
+        # End configure Devices
 
         return ET.tostring(root)
 
@@ -158,6 +114,12 @@ class Domain(object):
                 self.disk = Disk(each[4:], self.disk.source_file_type)
             elif each[0:7] == "os_type":
                 self.disk = Disk(self.disk.source_file, each[9:])
+
+    # Create VM
+    def create(self, uri=__uri__):
+        connection = libvirt.open(uri)
+        connection.defineXML(self.get_xml())
+        connection.close()
 
 
 class Disk(object):
