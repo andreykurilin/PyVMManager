@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import os
+import subprocess
 
 __author__ = 'akurilin'
 
@@ -36,7 +38,28 @@ class Disk(object):
         return Disk("file", "disk", source_file)
 
     def get_xml(self):
-        {}
+        child = [{"name": "driver",
+                  "attrib": {"name": "qemu", "type": self.driver_type}},
+                 {"name": "source", "attrib": {"file": self.source_file}}]
+        if self.target_dev is not None:
+            child.append(
+                {"name": "target", "attrib": {"dev": self.target_dev}})
+        return {"name": "disk",
+                "attrib": {"type": self.type, "device": self.device},
+                "child": child}
+
+    @staticmethod
+    def get_file_type(source_file):
+        if os.path.isfile(source_file):
+            cmd = "qemu-img info " + source_file
+            qemu_img = subprocess.Popen(cmd, shell=True,
+                                        stdout=subprocess.PIPE)
+            qemu_img_result = qemu_img.communicate()
+            lst = qemu_img_result[0].split()
+            for i in range(0, lst.__len__() - 1):
+                if lst[i] == "format:":
+                    return lst[i + 1]
+            return None
 
     def set_target_dev(self, dev):
         self.target_dev = dev
@@ -52,5 +75,5 @@ class Disk(object):
         def __str__(self):
             return " Illegal argument \"" \
                    + self.invalid_arg + "\". Allowed arguments: " \
-                   + str(self.valid_args).replace("(", "").replace(")",
-                                                                   "") + "."
+                   + str(self.valid_args).replace("(", "").replace(")", "") \
+                   + "."
