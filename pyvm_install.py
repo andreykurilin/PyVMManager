@@ -2,7 +2,7 @@
 import libvirt
 import os
 import sys
-from Domain import Domain
+from domain import Domain
 
 __author__ = 'akurilin'
 __uri__ = "qemu:///system"
@@ -26,14 +26,17 @@ def print_author():
 
 
 # Create VM
-def create(vm_name, memory, img_address, img_type="none", uuid=None, vcpu=1, os_type="hvm", type_arch="x86_64",
+def create(vm_name, memory, img_address, img_type="none", uuid=None, vcpu=1,
+           os_type="hvm", type_arch="x86_64",
            type_machine="pc-1.0", clock_offset="utc",
-           domain_type="kvm", emulator="/usr/bin/kvm", network_type="network", network="default", mac_address=None,
+           domain_type="kvm", emulator="/usr/bin/kvm", network_type="network",
+           network="default", mac_address=None,
            uri=__uri__):
     connection = libvirt.open(uri)
     try:
         dsk = Domain(vm_name, memory, img_address,
-                     img_type, uuid, vcpu, os_type, type_arch, type_machine, clock_offset, domain_type, emulator,
+                     img_type, uuid, vcpu, os_type, type_arch, type_machine,
+                     clock_offset, domain_type, emulator,
                      network_type, network, mac_address)
         connection.defineXML(dsk.get_xml())
     except libvirt.libvirtError:
