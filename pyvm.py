@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import argparse
-from domain_controller import *
+from domain_controller.controller import *
 
 __author__ = 'akurilin'
 __version__ = "1.0 Alpha"

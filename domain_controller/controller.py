@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import libvirt
-from domain import Domain
+from controller.domain import Domain
 from xml_utils import xml_to_string
 
 __author__ = 'akurilin'
