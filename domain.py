@@ -79,7 +79,7 @@ class Domain(object):
         return devices
 
     def get_xml(self):
-        return {"name": "domain",
+        return add_elements({"name": "domain",
                 "attrib": {"type": self.domain_type},
                 "child": [
                     {"name": "name", "text": self.name},
@@ -108,7 +108,7 @@ class Domain(object):
                     {"name": "on_reboot", "text": self.activity["on_reboot"]},
                     {"name": "on_crash", "text": self.activity["on_crash"]},
                     self.get_devices()
-                ]}
+                ]})
 
     # Create VM
     def create(self, uri=__uri__):
