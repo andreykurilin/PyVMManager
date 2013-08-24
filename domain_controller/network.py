@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from virtinst.util import randomMAC
-from controller import domain
+import domain
 
 __author__ = 'akurilin'
 
