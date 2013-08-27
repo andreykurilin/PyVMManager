@@ -68,9 +68,11 @@ install_parser.add_argument("-D", "--disk", dest='disks', help='add disk',
                             default=None, nargs='+')
 install_parser.add_argument("-r", "--cdrom", dest='cdroms', help='add cdrom',
                             default=None, nargs='+')
-install_parser.add_argument("-N", "--network", dest='nets', help='add networks',
+install_parser.add_argument("-N", "--network", dest='nets',
+                            help='add networks',
                             default=None, nargs='+')
-install_parser.add_argument("-b", "--bridge", dest='bridges', help='add bridges',
+install_parser.add_argument("-b", "--bridge", dest='bridges',
+                            help='add bridges',
                             default=None, nargs='+')
 install_parser.set_defaults(handler=create_vm)
 

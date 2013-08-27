@@ -34,15 +34,15 @@ class Domain(object):
         self.disks = []
         self.nets = []
 
-    def add_disk(self, file, device):
+    def add_disk(self, source_file, device):
         if device == "cdrom":
-            self.disks.append(Disk.cdrom_init(file))
+            self.disks.append(Disk.cdrom_init(source_file))
         elif device == "disk":
-            self.disks.append(Disk.disk_init(file))
+            self.disks.append(Disk.disk_init(source_file))
 
-    def add_network(self, type="network", net_name="default",
+    def add_network(self, net_type="network", net_name="default",
                     mac_address=None):
-        self.nets.append(Network(type, net_name, mac_address))
+        self.nets.append(Network(net_type, net_name, mac_address))
 
     def _add_sub_element_to_xml(self, parent, name, text=None, attrib=None):
         child = ET.SubElement(parent, name)
@@ -65,21 +65,25 @@ class Domain(object):
             for net in self.nets:
                 devices["child"].append(net.get_xml())
         devices["child"].append(
-            {"name": "console", "attrib": {"type": "pty"}, "child": [
-                {"name": "serial",
-                 "attrib": {"type": "serial", "port": "0"}}]})
+            {"name": "console",
+             "attrib": {"type": "pty"},
+             "child": [{"name": "serial",
+                        "attrib": {"type": "serial", "port": "0"}}]})
         devices["child"].append(
-            {"name": "input", "attrib": {"type": "mouse", "bus": "ps2"}})
-        devices["child"].append({"name": "graphics",
-                                 "attrib": {"type": "vnc", "port": "-1",
-                                            "autoport": "yes"}, "child": [
-            {"name": "model",
-             "attrib": {"type": "cirrus", "vram": "9216", "heads": "1"}}]})
-
+            {"name": "input",
+             "attrib": {"type": "mouse", "bus": "ps2"}})
+        devices["child"].append(
+            {"name": "graphics",
+             "attrib": {"type": "vnc", "port": "-1", "autoport": "yes"},
+             "child": [{"name": "model",
+                        "attrib": {"type": "cirrus",
+                                   "vram": "9216",
+                                   "heads": "1"}}]})
         return devices
 
     def get_xml(self):
-        return add_elements({"name": "domain",
+        return add_elements(
+            {"name": "domain",
                 "attrib": {"type": self.domain_type},
                 "child": [
                     {"name": "name", "text": self.name},

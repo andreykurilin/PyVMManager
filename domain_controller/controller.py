@@ -107,8 +107,9 @@ def show_vm_list(args, connection):
 
     domains = get_domains(connection)
     for name in domains.keys():
-        if domains[name]["status"] == "shutdown" and args.list_select == "all" \
-            or domains[name]["status"] != "shutdown":
+        if domains[name]["status"] == "shutdown" and \
+            args.list_select == "all" or \
+                domains[name]["status"] != "shutdown":
             print "{1}{0}{2}{0}{3}".format(vert_delimiter,
                                            domains[name]["id"],
                                            domains[name]["status"],
@@ -136,7 +137,7 @@ def create_vm(args, connection):
                 domain.add_network(net_name=net)
         if args.bridges is not None:
             for br in args.bridges:
-                domain.add_network(type="bridge", net_name=br)
+                domain.add_network(net_type="bridge", net_name=br)
 
         print ("Try to create \"" + domain.name + "\"")
         connection.defineXML(xml_to_string(domain.get_xml()))
