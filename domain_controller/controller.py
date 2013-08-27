@@ -1,156 +1,177 @@
 #!/usr/bin/env python
 import libvirt
-from domain import Domain
+from domain_controller.domain import Domain
 from xml_utils import xml_to_string
 
 __author__ = 'akurilin'
 
 
-def libvirt_connection(func):
-    def decorated(*args, **kwargs):
+class Controller(object):
+    def __init__(self, uri, error_flag=False):
+        self.uri = uri
+        self.error_flag = error_flag
         try:
-            connection = libvirt.open(args.uri)
-            func(connection, *args,  **kwargs)
+            self.connection = libvirt.open(self.uri)
         except libvirt.libvirtError:
-            print "Can't connect to URI"
-        finally:
-            if "connection" in locals() and connection.isAlive():
-                connection.close()
+            error_flag = ConnectionError(self.uri)
+            print error_flag
+            if self.error_flag:
+                raise error_flag
 
-    return decorated
+    def get_domains(self):
+        dict = {}
+        for id in self.connection.listDomainsID():
+            domain = self.connection.lookupByID(id)
+            dict[domain.name()] = {"status": "running", "id": id,
+                                   "name": domain.name()}
+        for defined_domain in self.connection.listDefinedDomains():
+            dict[defined_domain] = {"status": "shutdown", "id": "-",
+                                    "name": defined_domain}
+        return dict
 
-
-def get_domains(connection):
-    dict = {}
-    for id in connection.listDomainsID():
-        domain = connection.lookupByID(id)
-        dict[domain.name()] = {"status": "running", "id": id,
-                               "name": domain.name()}
-    for defined_domain in connection.listDefinedDomains():
-        dict[defined_domain] = {"status": "shutdown", "id": "-",
-                                "name": defined_domain}
-    return dict
-
-
-@libvirt_connection
-def start_vm(args, connection):
-    domains = get_domains(connection)
-    if args.vm_name in domains.keys():
-        if domains[str(args.vm_name)]["status"] == "running":
-            print ("Virtual machine \"" + args.vm_name + " already started.")
+    def start_vm(self, args):
+        domains = self.get_domains()
+        if args.vm_name in domains.keys():
+            if domains[str(args.vm_name)]["status"] == "running":
+                print ("Virtual machine \"{0}"
+                       "\" already started.".format(args.vm_name))
+            else:
+                print ("Starting \"" + args.vm_name + "\"...")
+                self.connection.lookupByName(args.vm_name).create()
         else:
-            print ("Starting \"" + args.vm_name + "\"...")
-            connection.lookupByName(args.vm_name).create()
-    else:
-        print ("Virtual machine \"" + args.vm_name + " is not created yet.")
+            error = NotCreatedVMError(args.vm_name)
+            print error
+            if self.error_flag:
+                raise error
 
-
-@libvirt_connection
-def stop_vm(args, connection):
-    domains = get_domains(connection)
-    if args.vm_name in domains.keys():
-        if domains[args.vm_name]["status"] == "shutdown":
-            print ("Virtual machine \"" + args.vm_name + " is not running.")
+    def stop_vm(self, args):
+        domains = self.get_domains()
+        if args.vm_name in domains.keys():
+            if domains[args.vm_name]["status"] == "shutdown":
+                print ("Virtual machine \"{0}"
+                       "\" is not running.".format(args.vm_name))
+            else:
+                print ("Try to stop \"{0}\"...".format(args.vm_name))
+                self.connection.lookupByName(args.vm_name).shutdown()
         else:
-            print ("Try to stop \"" + args.vm_name + "\"...")
-            connection.lookupByName(args.vm_name).shutdown()
-    else:
-        print ("Virtual machine \"" + args.vm_name + " is not created yet.")
+            error = NotCreatedVMError(args.vm_name)
+            print error
+            if self.error_flag:
+                raise error
 
-
-@libvirt_connection
-def forced_stop_vm(args, connection):
-    domains = get_domains(connection)
-    if args.vm_name in domains.keys():
-        if domains[args.vm_name]["status"] == "shutdown":
-            print ("Virtual machine \"" + args.vm_name + " is not running.")
+    def forced_stop_vm(self, args):
+        domains = self.get_domains()
+        if args.vm_name in domains.keys():
+            if domains[args.vm_name]["status"] == "shutdown":
+                print ("Virtual machine \"{0}"
+                       "\" is not running.".format(args.vm_name))
+            else:
+                print ("Forced stop \"{0}\"...".format(args.vm_name))
+                self.connection.lookupByName(args.vm_name).destroy()
         else:
-            print ("Forced stop \"" + args.vm_name + "\"...")
-            connection.lookupByName(args.vm_name).destroy()
-    else:
-        print ("Virtual machine \"" + args.vm_name + " is not created yet.")
+            error = NotCreatedVMError(args.vm_name)
+            print error
+            if self.error_flag:
+                raise error
 
-
-@libvirt_connection
-def reboot_vm(args, connection):
-    domains = get_domains(connection)
-    if args.vm_name in domains.keys():
-        if domains[args.vm_name]["status"] == "shutdown":
-            print ("Virtual machine \"" + args.vm_name + " is not running.")
+    def reboot_vm(self, args):
+        domains = self.get_domains()
+        if args.vm_name in domains.keys():
+            if domains[args.vm_name]["status"] == "shutdown":
+                print ("Virtual machine \"{0}"
+                       "\" is not running.".format(args.vm_name))
+            else:
+                print ("Send reboot signal to \"" + args.vm_name + "\"...")
+                self.connection.lookupByName(args.vm_name).reboot()
         else:
-            print ("Send reboot signal to \"" + args.vm_name + "\"...")
-            connection.lookupByName(args.vm_name).reboot()
-    else:
-        print ("Virtual machine \"" + args.vm_name + " is not created yet.")
+            error = NotCreatedVMError(args.vm_name)
+            print error
+            if self.error_flag:
+                raise error
 
+    def show_vm_list(self, args):
+        vert_delimiter = "\t| "
+        hor_delimiter = "---------------------------------------" \
+                        "----------------------------------------"
+        print hor_delimiter
+        print "id" + vert_delimiter + "Status" + vert_delimiter + "Domain"
+        print hor_delimiter
 
-@libvirt_connection
-def show_vm_status(args, connection):
-    domains = get_domains(connection)
-    if args.vm_name in domains.keys():
-        if domains[args.vm_name]["status"] == "shutdown":
-            print ("Virtual machine \"" + args.vm_name + " is not running.")
+        domains = self.get_domains()
+        for name in domains.keys():
+            if domains[name]["status"] == "shutdown" and \
+                            args.list_select == "all" or \
+                            domains[name]["status"] != "shutdown":
+                print "{1}{0}{2}{0}{3}".format(vert_delimiter,
+                                               domains[name]["id"],
+                                               domains[name]["status"],
+                                               domains[name]["name"])
+
+    def create_vm(self, args):
+        domains = self.get_domains()
+        if args.new_vm_name in domains.keys():
+            error = AlreadyCreatedVMError(args.new_vm_name)
+            print error
+            if self.error_flag:
+                raise error
         else:
-            print ("Virtual machine \"" + args.vm_name + " is running.")
-    else:
-        print ("Virtual machine \"" + args.vm_name + " is not created yet.")
+            domain = Domain(args.new_vm_name, args.memory, args.uuid,
+                            args.vcpu,
+                            args.os_type, args.type_arch, args.type_machine,
+                            args.clock_offset, args.domain_type,
+                            args.emulator)
+            if args.disks is not None:
+                for disk in args.disks:
+                    domain.add_disk(disk, "disk")
+            if args.cdroms is not None:
+                for cdrom in args.cdroms:
+                    domain.add_disk(cdrom, "cdrom")
+            if args.nets is not None:
+                for net in args.nets:
+                    domain.add_network(net_name=net)
+            if args.bridges is not None:
+                for br in args.bridges:
+                    domain.add_network(net_type="bridge", net_name=br)
+
+            print ("Try to create \"" + domain.name + "\"")
+            self.connection.defineXML(xml_to_string(domain.get_xml()))
+
+    def remove_vm(self, args):
+        domains = self.get_domains()
+        if args.vm_name in domains.keys():
+            if domains[args.vm_name]["status"] != "shutdown":
+                print ("Forced stop \"" + args.vm_name + "\"...")
+                self.connection.lookupByName(args.vm_name).destroy()
+            print ("Delete \"" + args.vm_name + "\".")
+            self.connection.lookupByName(args.vm_name).undefine()
+        else:
+            error = NotCreatedVMError(args.vm_name)
+            print error
+            if self.error_flag:
+                raise error
 
 
-@libvirt_connection
-def show_vm_list(args, connection):
-    vert_delimiter = "\t| "
-    hor_delimiter = "----------------------------------------------------" \
-                    "---------------------------"
-    print hor_delimiter
-    print "id" + vert_delimiter + "Status" + vert_delimiter + "Domain"
-    print hor_delimiter
+class ConnectionError(Exception):
+    def __init__(self, uri):
+        self.uri = uri
 
-    domains = get_domains(connection)
-    for name in domains.keys():
-        if domains[name]["status"] == "shutdown" and \
-            args.list_select == "all" or \
-                domains[name]["status"] != "shutdown":
-            print "{1}{0}{2}{0}{3}".format(vert_delimiter,
-                                           domains[name]["id"],
-                                           domains[name]["status"],
-                                           domains[name]["name"])
+    def __str__(self):
+        return "Can't connect to \"{0}\"".format(self.uri)
 
 
-@libvirt_connection
-def create_vm(args, connection):
-    domains = get_domains(connection)
-    if args.new_vm_name in domains.keys():
-        print ("Virtual machine \"" + args.vm_name + " already created.")
-    else:
-        domain = Domain(args.new_vm_name, args.memory, args.uuid, args.vcpu,
-                        args.os_type, args.type_arch, args.type_machine,
-                        args.clock_offset, args.domain_type,
-                        args.emulator)
-        if args.disks is not None:
-            for disk in args.disks:
-                domain.add_disk(disk, "disk")
-        if args.cdroms is not None:
-            for cdrom in args.cdroms:
-                domain.add_disk(cdrom, "cdrom")
-        if args.nets is not None:
-            for net in args.nets:
-                domain.add_network(net_name=net)
-        if args.bridges is not None:
-            for br in args.bridges:
-                domain.add_network(net_type="bridge", net_name=br)
+class VMError(Exception):
+    def __init__(self, name):
+        self.name = name
 
-        print ("Try to create \"" + domain.name + "\"")
-        connection.defineXML(xml_to_string(domain.get_xml()))
+    def __str__(self):
+        raise NotImplementedError()
 
 
-@libvirt_connection
-def remove_vm(args, connection):
-    domains = get_domains(connection)
-    if args.vm_name in domains.keys():
-        if get_domains(connection)[args.vm_name]["status"] != "shutdown":
-            print ("Forced stop \"" + args.vm_name + "\"...")
-            connection.lookupByName(args.vm_name).destroy()
-        print ("Delete \"" + args.vm_name + "\".")
-        connection.lookupByName(args.vm_name).undefine()
-    else:
-        print ("Virtual machine \"" + args.vm_name + " is not created yet.")
+class AlreadyCreatedVMError(VMError):
+    def __str__(self):
+        return "Virtual machine \"{0}\" already created.".format(self.name)
+
+
+class NotCreatedVMError(VMError):
+    def __str__(self):
+        return "Virtual machine \"{0}\" is not created yet.".format(self.name)

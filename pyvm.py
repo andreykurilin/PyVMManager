@@ -1,54 +1,58 @@
 #!/usr/bin/env python
 import argparse
-from domain_controller.controller import *
+from domain_controller.controller import Controller
 
 __author__ = 'akurilin'
-__version__ = "1.0 Alpha"
+__version__ = "1.0"
 
 _uri = "qemu:///system"
+
 
 def main():
     parser = argparse.ArgumentParser(
         description='Py util that help manage'
-                    '(create/delete/start/shutdown/reboot) VM.')
-    parser = argparse.ArgumentParser(add_help=True, version=__version__)
+                    '(create/delete/start/shutdown/reboot) VM.',
+        add_help=True, version=__version__)
     action_parser = parser.add_subparsers(metavar="Manage")
 
     start_parser = action_parser.add_parser('start', help='Start VM')
     start_parser.add_argument('vm_name', help='name of VM')
-    start_parser.set_defaults(handler=start_vm)
+    start_parser.set_defaults(handler=Controller.start_vm)
 
     stop_parser = action_parser.add_parser('stop', help='Stop VM')
     stop_parser.add_argument('vm_name', help='name of VM')
-    stop_parser.set_defaults(handler=stop_vm)
+    stop_parser.set_defaults(handler=Controller.stop_vm)
 
     fstop_parser = action_parser.add_parser('fstop', help='Forced stop VM')
     fstop_parser.add_argument('vm_name', help='name of VM')
-    fstop_parser.set_defaults(handler=forced_stop_vm)
+    fstop_parser.set_defaults(handler=Controller.forced_stop_vm)
 
     fstop_parser = action_parser.add_parser('reboot', help='Restart VM')
     fstop_parser.add_argument('vm_name', help='name of VM')
-    fstop_parser.set_defaults(handler=reboot_vm)
+    fstop_parser.set_defaults(handler=Controller.reboot_vm)
 
     stop_parser = action_parser.add_parser('status', help='Show status VM')
     stop_parser.add_argument('vm_name', help='name of VM')
-    stop_parser.set_defaults(handler=show_vm_status)
+    #stop_parser.set_defaults(handler=Controller.show_vm_status)
 
     list_parser = action_parser.add_parser('list', help='Displays VM')
     list_parser.add_argument("list_select", choices=['run', 'all'],
                              metavar="run/all")
-    list_parser.set_defaults(handler=show_vm_list)
+    list_parser.set_defaults(handler=Controller.show_vm_list)
 
     install_parser = action_parser.add_parser('install', help='Install new VM')
-    install_parser.add_argument("-n", "--name", dest='new_vm_name', required=True,
+    install_parser.add_argument("-n", "--name", dest='new_vm_name',
+                                required=True,
                                 help='name of VM', metavar="VM_NAME")
     install_parser.add_argument("-m", "--memory", dest='memory', type=int,
                                 help='memory of VM in Bytes', required=True)
     install_parser.add_argument("-u", "--uuid", dest='uuid',
                                 help='specify UUID of VM')
     install_parser.add_argument("-v", "--vcpu", dest='vcpu', type=int,
-                                help='specify vcpu of VM. Default=1', default=1)
-    install_parser.add_argument("-o", "--os_type", dest='os_type', default="hvm",
+                                help='specify vcpu of VM. Default=1',
+                                default=1)
+    install_parser.add_argument("-o", "--os_type", dest='os_type',
+                                default="hvm",
                                 help='specify type of OS. Default=\"hvm\"')
     install_parser.add_argument("-t", "--os_type_arch", dest='type_arch',
                                 help='specify type of OS. Default=\"x86_64\"',
@@ -67,7 +71,8 @@ def main():
                                 default="/usr/bin/kvm")
     install_parser.add_argument("-D", "--disk", dest='disks', help='add disk',
                                 default=None, nargs='+')
-    install_parser.add_argument("-r", "--cdrom", dest='cdroms', help='add cdrom',
+    install_parser.add_argument("-r", "--cdrom", dest='cdroms',
+                                help='add cdrom',
                                 default=None, nargs='+')
     install_parser.add_argument("-N", "--network", dest='nets',
                                 help='add networks',
@@ -75,11 +80,11 @@ def main():
     install_parser.add_argument("-b", "--bridge", dest='bridges',
                                 help='add bridges',
                                 default=None, nargs='+')
-    install_parser.set_defaults(handler=create_vm)
+    install_parser.set_defaults(handler=Controller.create_vm)
 
     remove_parser = action_parser.add_parser('delete', help='Delete VM')
     remove_parser.add_argument('vm_name', help='name of VM')
-    remove_parser.set_defaults(handler=remove_vm)
+    remove_parser.set_defaults(handler=Controller.remove_vm)
 
     parser.add_argument("-c", "--connect", dest="uri",
                         help="Connect to the specified URI, "
@@ -89,7 +94,8 @@ def main():
     if args.uri is None:
         args.uri = _uri
 
-    args.handler(args)
+    dom_controller = Controller(_uri)
+    args.handler(dom_controller, args)
 
-if __name__ == "main":
+if __name__ == "__main__":
     main()
