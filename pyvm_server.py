@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from wsgi_controller.router import Router
 from wsgi_controller.controller import *
 
 __author__ = 'akurilin'
@@ -8,7 +7,7 @@ _server_port = 8080
 
 
 if __name__ == '__main__':
-    app = Router()
+    app = Controller()
     app.add_route("GET", "/url", error_404)
     app.add_route("GET", "/create", ok_200)
     from wsgiref.simple_server import make_server
