@@ -6,18 +6,18 @@ import domain
 __author__ = 'akurilin'
 
 
-class disk(object):
+class Disk(object):
     valid_types = ("file", "block", "dir", "network", "volume")
     valid_devices = ("floppy", "disk", "cdrom", "lum")
 
     def __init__(self, type, device, source_file, target_dev=None,
                  driver_type=None):
-        if type not in disk.valid_types:
-            raise domain.IllegalArgumentError(disk.valid_types, type)
+        if type not in Disk.valid_types:
+            raise domain.IllegalArgumentError(Disk.valid_types, type)
         self.type = type
-        if device is not None and device not in disk.valid_devices:
+        if device is not None and device not in Disk.valid_devices:
             print ("asd")
-            raise domain.IllegalArgumentError(disk.valid_devices, device)
+            raise domain.IllegalArgumentError(Disk.valid_devices, device)
         self.device = device
         self.source_file = source_file
         if device == "cdrom":
@@ -33,11 +33,11 @@ class disk(object):
 
     @staticmethod
     def cdrom_init(source_file):
-        return disk("block", "cdrom", source_file)
+        return Disk("block", "cdrom", source_file)
 
     @staticmethod
     def disk_init(source_file):
-        return disk("file", "disk", source_file)
+        return Disk("file", "disk", source_file)
 
     def get_xml(self):
         child = [{"name": "driver",

@@ -24,11 +24,11 @@ def get_domains(connection):
     dict = {}
     for id in connection.listDomainsID():
         domain = connection.lookupByID(id)
-        dict[domain.name()] = {"status": "run", "id": id,
+        dict[domain.name()] = {"status": "running", "id": id,
                                "name": domain.name()}
     for defined_domain in connection.listDefinedDomains():
         dict[defined_domain] = {"status": "shutdown", "id": "-",
-                                "name": domain.name()}
+                                "name": defined_domain}
     return dict
 
 
@@ -36,7 +36,7 @@ def get_domains(connection):
 def start_vm(args, connection):
     domains = get_domains(connection)
     if args.vm_name in domains.keys():
-        if get_domains(connection)[args.vm_name]["status"] == "start":
+        if domains[str(args.vm_name)]["status"] == "running":
             print ("Virtual machine \"" + args.vm_name + " already started.")
         else:
             print ("Starting \"" + args.vm_name + "\"...")
@@ -49,7 +49,7 @@ def start_vm(args, connection):
 def stop_vm(args, connection):
     domains = get_domains(connection)
     if args.vm_name in domains.keys():
-        if get_domains(connection)[args.vm_name]["status"] == "shutdown":
+        if domains[args.vm_name]["status"] == "shutdown":
             print ("Virtual machine \"" + args.vm_name + " is not running.")
         else:
             print ("Try to stop \"" + args.vm_name + "\"...")
@@ -62,7 +62,7 @@ def stop_vm(args, connection):
 def forced_stop_vm(args, connection):
     domains = get_domains(connection)
     if args.vm_name in domains.keys():
-        if get_domains(connection)[args.vm_name]["status"] == "shutdown":
+        if domains[args.vm_name]["status"] == "shutdown":
             print ("Virtual machine \"" + args.vm_name + " is not running.")
         else:
             print ("Forced stop \"" + args.vm_name + "\"...")
@@ -75,7 +75,7 @@ def forced_stop_vm(args, connection):
 def reboot_vm(args, connection):
     domains = get_domains(connection)
     if args.vm_name in domains.keys():
-        if get_domains(connection)[args.vm_name]["status"] == "shutdown":
+        if domains[args.vm_name]["status"] == "shutdown":
             print ("Virtual machine \"" + args.vm_name + " is not running.")
         else:
             print ("Send reboot signal to \"" + args.vm_name + "\"...")
@@ -88,7 +88,7 @@ def reboot_vm(args, connection):
 def show_vm_status(args, connection):
     domains = get_domains(connection)
     if args.vm_name in domains.keys():
-        if get_domains(connection)[args.vm_name]["status"] == "shutdown":
+        if domains[args.vm_name]["status"] == "shutdown":
             print ("Virtual machine \"" + args.vm_name + " is not running.")
         else:
             print ("Virtual machine \"" + args.vm_name + " is running.")
@@ -104,15 +104,15 @@ def show_vm_list(args, connection):
     print hor_delimiter
     print "id" + vert_delimiter + "Status" + vert_delimiter + "Domain"
     print hor_delimiter
-    for domain_name in [domain for domain in get_domains(connection) if
-                        domain["status"] != "shutdown"]:
-        print domain_name["id"] + vert_delimiter + domain_name[
-            "status"] + vert_delimiter + domain_name["name"]
-    if args.list_select == "all":
-        for domain_name in [domain for domain in get_domains(connection) if
-                            domain["status"] == "shutdown"]:
-            print domain_name["id"] + vert_delimiter + "shutdown" + \
-                + vert_delimiter + domain_name["name"]
+
+    domains = get_domains(connection)
+    for name in domains.keys():
+        if domains[name]["status"] == "shutdown" and args.list_select == "all" \
+            or domains[name]["status"] != "shutdown":
+            print "{1}{0}{2}{0}{3}".format(vert_delimiter,
+                                           domains[name]["id"],
+                                           domains[name]["status"],
+                                           domains[name]["name"])
 
 
 @libvirt_connection
@@ -149,8 +149,7 @@ def remove_vm(args, connection):
         if get_domains(connection)[args.vm_name]["status"] != "shutdown":
             print ("Forced stop \"" + args.vm_name + "\"...")
             connection.lookupByName(args.vm_name).destroy()
-        else:
-            print ("Delete \"" + args.vm_name + "\".")
-            connection.lookupByName(args.vm_name).destroy()
+        print ("Delete \"" + args.vm_name + "\".")
+        connection.lookupByName(args.vm_name).undefine()
     else:
         print ("Virtual machine \"" + args.vm_name + " is not created yet.")

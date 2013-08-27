@@ -3,7 +3,7 @@
 import libvirt
 import uuid as id
 import xml.etree.cElementTree as ET
-import disk
+from disk import Disk
 from network import Network
 from xml_utils import *
 
@@ -36,9 +36,9 @@ class Domain(object):
 
     def add_disk(self, file, device):
         if device == "cdrom":
-            self.disks.append(disk.cdrom_init(file))
+            self.disks.append(Disk.cdrom_init(file))
         elif device == "disk":
-            self.disks.append(disk.disk_init(file))
+            self.disks.append(Disk.disk_init(file))
 
     def add_network(self, type="network", net_name="default",
                     mac_address=None):
