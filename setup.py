@@ -13,6 +13,11 @@ setup(
     namespace_packages=['pyvm'],
     packages=find_packages(),
     py_modules=['pyvm', 'xml_utils'],
+    entry_points = {
+        'console_scripts': [
+            'pyvm-manager = pyvm:main',
+        ]
+    },
     platforms='any',
     zip_safe=False,
     include_package_data=True,

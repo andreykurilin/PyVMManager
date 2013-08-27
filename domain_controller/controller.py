@@ -7,10 +7,10 @@ __author__ = 'akurilin'
 
 
 def libvirt_connection(func):
-    def decorated(args):
+    def decorated(*args, **kwargs):
         try:
             connection = libvirt.open(args.uri)
-            func(args, connection)
+            func(connection, *args,  **kwargs)
         except libvirt.libvirtError:
             print "Can't connect to URI"
         finally:
