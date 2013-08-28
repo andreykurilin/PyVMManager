@@ -16,32 +16,32 @@ def main():
     action_parser = parser.add_subparsers(metavar="Manage")
 
     start_parser = action_parser.add_parser('start', help='Start VM')
-    start_parser.add_argument('vm_name', help='name of VM')
-    start_parser.set_defaults(handler=Controller.start_vm)
+    start_parser.add_argument('name', help='name of VM')
+    start_parser.set_defaults(handler=Controller.start)
 
     stop_parser = action_parser.add_parser('stop', help='Stop VM')
-    stop_parser.add_argument('vm_name', help='name of VM')
-    stop_parser.set_defaults(handler=Controller.stop_vm)
+    stop_parser.add_argument('name', help='name of VM')
+    stop_parser.set_defaults(handler=Controller.stop)
 
     fstop_parser = action_parser.add_parser('fstop', help='Forced stop VM')
-    fstop_parser.add_argument('vm_name', help='name of VM')
-    fstop_parser.set_defaults(handler=Controller.forced_stop_vm)
+    fstop_parser.add_argument('name', help='name of VM')
+    fstop_parser.set_defaults(handler=Controller.forced_stop)
 
     fstop_parser = action_parser.add_parser('reboot', help='Restart VM')
-    fstop_parser.add_argument('vm_name', help='name of VM')
-    fstop_parser.set_defaults(handler=Controller.reboot_vm)
+    fstop_parser.add_argument('name', help='name of VM')
+    fstop_parser.set_defaults(handler=Controller.reboot)
 
-    stop_parser = action_parser.add_parser('status', help='Show status VM')
-    stop_parser.add_argument('vm_name', help='name of VM')
-    #stop_parser.set_defaults(handler=Controller.show_vm_status)
+    info_parser = action_parser.add_parser('info', help='Show VM info')
+    info_parser.add_argument('name', help='name of VM')
+    info_parser.set_defaults(handler=Controller.show_info)
 
     list_parser = action_parser.add_parser('list', help='Displays VM')
-    list_parser.add_argument("list_select", choices=['run', 'all'],
+    list_parser.add_argument("select", choices=['run', 'all'],
                              metavar="run/all")
-    list_parser.set_defaults(handler=Controller.show_vm_list)
+    list_parser.set_defaults(handler=Controller.list)
 
     install_parser = action_parser.add_parser('install', help='Install new VM')
-    install_parser.add_argument("-n", "--name", dest='new_vm_name',
+    install_parser.add_argument("-n", "--name", dest='name',
                                 required=True,
                                 help='name of VM', metavar="VM_NAME")
     install_parser.add_argument("-m", "--memory", dest='memory', type=int,
@@ -80,11 +80,11 @@ def main():
     install_parser.add_argument("-b", "--bridge", dest='bridges',
                                 help='add bridges',
                                 default=None, nargs='+')
-    install_parser.set_defaults(handler=Controller.create_vm)
+    install_parser.set_defaults(handler=Controller.create)
 
     remove_parser = action_parser.add_parser('delete', help='Delete VM')
     remove_parser.add_argument('vm_name', help='name of VM')
-    remove_parser.set_defaults(handler=Controller.remove_vm)
+    remove_parser.set_defaults(handler=Controller.remove)
 
     parser.add_argument("-c", "--connect", dest="uri",
                         help="Connect to the specified URI, "
@@ -95,7 +95,7 @@ def main():
         args.uri = _uri
 
     dom_controller = Controller(_uri)
-    args.handler(dom_controller, args)
+    args.handler(dom_controller, vars(args))
 
 if __name__ == "__main__":
     main()
