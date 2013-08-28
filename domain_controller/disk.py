@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 import subprocess
-import domain
+from domain_controller import domain
 
 __author__ = 'akurilin'
 

@@ -3,7 +3,7 @@
 import libvirt
 import uuid as id
 import xml.etree.cElementTree as ET
-from disk import Disk
+from domain_controller.disk import *
 from network import Network
 from xml_utils import *
 
