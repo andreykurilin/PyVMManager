@@ -1,14 +1,25 @@
 #!/usr/bin/env python
 import os
 import subprocess
-from domain_controller import domain
+import domain
 
 __author__ = 'akurilin'
 
 
 class Disk(object):
-    valid_types = ("file", "block", "dir", "network", "volume")
-    valid_devices = ("floppy", "disk", "cdrom", "lum")
+    """ Represent virtual disk.
+
+    Keyword arguments:
+    type -- type of disk
+        (tuple of allowed types assigned to "valid_types" variable)
+    device -- type of disk device
+        (tuple of allowed devices assigned to "valid_devices" variable)
+    source_file -- path to source file of disk image
+    target_dev -- target where disk will mounted(default None)
+    driver_type -- type of disk driver
+    """
+    valid_types = ()
+    valid_devices = ()
 
     def __init__(self, type, device, source_file, target_dev=None,
                  driver_type=None):

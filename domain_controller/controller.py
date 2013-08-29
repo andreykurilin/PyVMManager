@@ -1,17 +1,32 @@
 #!/usr/bin/env python
 import libvirt
+from domain_controller.disk import Disk
 from domain_controller.domain import Domain
+from domain_controller.network import Network
 from xml_utils import xml_to_string
+from settings import conf
 
 __author__ = 'akurilin'
 
 
 class Controller(object):
+    """ Represent management system(create/delete/power on/ power off/reboot)
+    VM using libvirt python api.
+
+    Keyword arguments:
+    uri -- hypervisor connection URI
+    error_flag -- the key that determines whether the exceptions are raised.
+        (default False)
+    """
     def __init__(self, uri, error_flag=False):
         self.uri = uri
         self.error_flag = error_flag
         self.connection = None
         self.connection = self.get_connection()
+        Domain.DEFAULT_VALUES = conf.Domain
+        Disk.valid_types = conf.Disk["valid_types"]
+        Disk.valid_devices = conf.Disk["valid_devices"]
+        Network.valid_types = conf.Network["valid_types"]
 
     def get_connection(self):
         if self.connection is None or not self.connection.isAlive():
@@ -110,7 +125,7 @@ class Controller(object):
         domains = self.get_domains()
         for name in domains.keys():
             if domains[name]["status"] == "shutdown" and \
-                args["list_select"] == "all" or \
+                args["select"] == "all" or \
                     domains[name]["status"] != "shutdown":
                 print "{1}{0}{2}{0}{3}".format(vert_delimiter,
                                                domains[name]["id"],
@@ -176,13 +191,12 @@ class Controller(object):
                 raise error
 
     def show_info(self, args):
-        domain_info = self.info(args).keys
+        domain_info = self.info(args)
         print 'Name =  %s' % domain_info["name"]
         print 'State = %d' % domain_info["state"]
         print 'Max Memory = %d' % domain_info["memory"]
         print 'Number of virt CPUs = %d' % domain_info["vcpu"]
         print 'CPU Time (in ns) = %d' % domain_info["cpu_time"]
-
 
 
 class ConnectionError(Exception):

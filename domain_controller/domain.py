@@ -14,13 +14,13 @@ __uri__ = "qemu:///system"
 
 class Domain(object):
     DEFAULT_VALUES = {"uuid": None,
-                      "vcpu": 1,
-                      "os_type": "hvm",
-                      "type_arch": "x86_64",
-                      "type_machine": "pc-1.0",
-                      "clock_offset": "utc",
-                      "domain_type": "kvm",
-                      "emulator": "/usr/bin/kvm"}
+                      "vcpu": None,
+                      "os_type": None,
+                      "type_arch": None,
+                      "type_machine": None,
+                      "clock_offset": None,
+                      "domain_type": None,
+                      "emulator": None}
 
     def __init__(self, name, memory, uuid=DEFAULT_VALUES["uuid"],
                  vcpu=DEFAULT_VALUES["vcpu"],

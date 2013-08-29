@@ -7,7 +7,18 @@ __author__ = 'akurilin'
 
 
 class Network(object):
-    valid_types = ("network", "bridge")
+    """ Represent network interface.
+
+    Keyword arguments:
+    type -- type of disk
+        (tuple of allowed types assigned to "valid_types" variable)
+    device -- type of disk device
+        (tuple of allowed devices assigned to "valid_devices" variable)
+    source_file -- path to source file of disk image
+    target_dev -- target where disk will mounted(default None)
+    driver_type -- type of disk driver
+    """
+    valid_types = ()
 
     def __init__(self, type, net_name, mac_address=None):
         if type not in Network.valid_types:
