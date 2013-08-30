@@ -3,8 +3,12 @@
 import libvirt
 import uuid as id
 import xml.etree.cElementTree as ET
+from sqlalchemy import *
+from sqlalchemy.orm import relationship
 from domain_controller.disk import *
 from network import Network
+from settings import conf
+from sql_controller import Base
 from xml_utils import *
 
 
@@ -12,7 +16,16 @@ __author__ = 'akurilin'
 __uri__ = "qemu:///system"
 
 
-class Domain(object):
+class Domain(Base):
+    __tablename__ = 'domains'
+
+    uuid = Column(String(100), primary_key=True)
+    name = Column(String(100))
+    memory = Column(String(100))
+    state = Column(Integer)
+    host_id = Column(Integer, ForeignKey('hosts.id'))
+    actions = relationship("Action", backref="domain")
+
     DEFAULT_VALUES = {"uuid": None,
                       "vcpu": None,
                       "os_type": None,
@@ -47,6 +60,8 @@ class Domain(object):
         self.emulator = emulator
         self.disks = []
         self.nets = []
+        self.state = 0
+        self.host_id = 1
 
     def add_disk(self, source_file, device):
         if device == "cdrom":
@@ -133,6 +148,10 @@ class Domain(object):
         connection = libvirt.open(uri)
         connection.defineXML(xml_to_string(self.get_xml()))
         connection.close()
+
+    def __repr__(self):
+        return "<Domain('%s', '%s', '%s', '%s', '%s')>" % (
+            self.name, self.memory, self.uuid, self.state, self.host_id)
 
 
 class IllegalArgumentError(ValueError):
