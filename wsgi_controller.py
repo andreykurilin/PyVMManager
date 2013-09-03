@@ -115,7 +115,7 @@ class Controller(controller.Controller):
 
     def list(self, environ, start_response):
         req = Request(environ)
-        domains = self.get_domains()
+        domains = self.get_domains_dict()
         args = self.data_to_dictionary(req.body)
         if "select" in args and args["select"] == "run":
             for key in domains.keys():

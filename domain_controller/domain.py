@@ -7,8 +7,7 @@ from sqlalchemy import *
 from sqlalchemy.orm import relationship
 from domain_controller.disk import *
 from network import Network
-from settings import conf
-from sql_controller import Base
+from sql_controller.tables import Base
 from xml_utils import *
 
 
@@ -19,14 +18,15 @@ __uri__ = "qemu:///system"
 class Domain(Base):
     __tablename__ = 'domains'
 
-    uuid = Column(String(100), primary_key=True)
+    uuid_str = Column(String(100), primary_key=True)
     name = Column(String(100))
     memory = Column(String(100))
-    state = Column(Integer)
     host_id = Column(Integer, ForeignKey('hosts.id'))
+    state_id = Column(Integer, ForeignKey('states.id'))
     actions = relationship("Action", backref="domain")
 
-    DEFAULT_VALUES = {"uuid": None,
+    DEFAULT_VALUES = {"state": None,
+                      "uuid": None,
                       "vcpu": None,
                       "os_type": None,
                       "type_arch": None,
@@ -35,7 +35,8 @@ class Domain(Base):
                       "domain_type": None,
                       "emulator": None}
 
-    def __init__(self, name, memory, uuid=DEFAULT_VALUES["uuid"],
+    def __init__(self, name, memory, state=DEFAULT_VALUES["state"],
+                 uuid_str=DEFAULT_VALUES["uuid"],
                  vcpu=DEFAULT_VALUES["vcpu"],
                  os_type=DEFAULT_VALUES["os_type"],
                  type_arch=DEFAULT_VALUES["type_arch"],
@@ -45,10 +46,10 @@ class Domain(Base):
                  emulator=DEFAULT_VALUES["emulator"]):
         self.name = name
         self.memory = memory
-        if uuid is None:
-            self.uuid = str(id.uuid1())
+        if uuid_str is None:
+            self.uuid_str = str(id.uuid1())
         else:
-            self.uuid = uuid
+            self.uuid_str = uuid_str
         self.vcpu = vcpu
         self.os_type = os_type
         self.type_arch = type_arch
@@ -60,7 +61,7 @@ class Domain(Base):
         self.emulator = emulator
         self.disks = []
         self.nets = []
-        self.state = 0
+        self.state_id = state
         self.host_id = 1
 
     def add_disk(self, source_file, device):
@@ -116,7 +117,7 @@ class Domain(Base):
                 "attrib": {"type": self.domain_type},
                 "child": [
                     {"name": "name", "text": self.name},
-                    {"name": "uuid", "text": str(self.uuid)},
+                    {"name": "uuid", "text": str(self.uuid_str)},
                     {"name": "memory", "text": str(self.memory),
                      "attrib": {"unit": "KiB"}},
                     {"name": "currentMemory", "text": str(self.memory),
@@ -151,7 +152,7 @@ class Domain(Base):
 
     def __repr__(self):
         return "<Domain('%s', '%s', '%s', '%s', '%s')>" % (
-            self.name, self.memory, self.uuid, self.state, self.host_id)
+            self.name, self.memory, self.uuid_str, self.state, self.host_id)
 
 
 class IllegalArgumentError(ValueError):

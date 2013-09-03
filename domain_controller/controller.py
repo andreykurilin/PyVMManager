@@ -2,7 +2,9 @@
 import libvirt
 from domain_controller.disk import Disk
 from domain_controller.domain import Domain
-from domain_controller.network import Network
+from network import Network
+import sql_controller.controller as sql_controller
+from sql_controller.tables import *
 from xml_utils import xml_to_string
 from settings import conf
 
@@ -18,11 +20,14 @@ class Controller(object):
     error_flag -- the key that determines whether the exceptions are raised.
         (default False)
     """
+
     def __init__(self, uri, error_flag=False):
         self.uri = uri
         self.error_flag = error_flag
         self.connection = None
         self.connection = self.get_connection()
+        self.sql_control = sql_controller.Controller()
+        self.sql_control.test_domain_table(self.get_domains_list())
         Domain.DEFAULT_VALUES = conf.Domain
         Disk.valid_types = conf.Disk["valid_types"]
         Disk.valid_devices = conf.Disk["valid_devices"]
@@ -40,26 +45,38 @@ class Controller(object):
                     raise error_flag
         return self.connection
 
-    def get_domains(self):
-        dict = {}
+    def get_domains_list(self):
+        domains_list = []
+        for id in self.get_connection().listDomainsID():
+            domains_list.append(self.get_connection().lookupByID(id))
+        for defined_domain in self.get_connection().listDefinedDomains():
+            domains_list.append(
+                self.get_connection().lookupByName(defined_domain))
+        return domains_list
+
+    def get_domains_dict(self):
+        domains_dict = {}
         for id in self.get_connection().listDomainsID():
             domain = self.get_connection().lookupByID(id)
-            dict[domain.name()] = {"status": "running", "id": id,
-                                   "name": domain.name()}
+            domains_dict[domain.name()] = {"status": "running", "id": id,
+                                           "name": domain.name()}
         for defined_domain in self.get_connection().listDefinedDomains():
-            dict[defined_domain] = {"status": "shutdown", "id": "-",
-                                    "name": defined_domain}
-        return dict
+            domains_dict[defined_domain] = {"status": "shutdown", "id": "-",
+                                            "name": defined_domain}
+        return domains_dict
 
     def start(self, args):
-        domains = self.get_domains()
+        domains = self.get_domains_dict()
         if args["name"] in domains.keys():
             if domains[str(args["name"])]["status"] == "running":
                 print ("Virtual machine \"{0}"
                        "\" already started.".format(args["name"]))
             else:
                 print ("Starting \"" + args["name"] + "\"...")
-                self.get_connection().lookupByName(args["name"]).create()
+                domain = self.get_connection().lookupByName(args["name"])
+                domain.create()
+                self.sql_control.add_record(
+                    Action.start_vm(domain.UUIDString()))
         else:
             error = NotCreatedVMError(args["name"])
             print error
@@ -67,7 +84,7 @@ class Controller(object):
                 raise error
 
     def stop(self, args):
-        domains = self.get_domains()
+        domains = self.get_domains_dict()
         if args["name"] in domains.keys():
             if domains[args["name"]]["status"] == "shutdown":
                 error = NotRunningError(args["name"])
@@ -76,7 +93,10 @@ class Controller(object):
                     raise error
             else:
                 print ("Try to stop \"{0}\"...".format(args["name"]))
-                self.get_connection().lookupByName(args["name"]).shutdown()
+                domain = self.get_connection().lookupByName(args["name"])
+                domain.shutdown()
+                self.sql_control.add_record(
+                    Action.stop_vm(domain.UUIDString()))
         else:
             error = NotCreatedVMError(args["name"])
             print error
@@ -84,14 +104,17 @@ class Controller(object):
                 raise error
 
     def forced_stop(self, args):
-        domains = self.get_domains()
+        domains = self.get_domains_dict()
         if args["name"] in domains.keys():
             if domains[args["name"]]["status"] == "shutdown":
                 print ("Virtual machine \"{0}"
                        "\" is not running.".format(args["name"]))
             else:
                 print ("Forced stop \"{0}\"...".format(args["name"]))
-                self.get_connection().lookupByName(args["name"]).destroy()
+                domain = self.get_connection().lookupByName(args["name"])
+                domain.destroy()
+                self.sql_control.add_record(
+                    Action.forced_stop_vm(domain.UUIDString()))
         else:
             error = NotCreatedVMError(args["name"])
             print error
@@ -99,15 +122,18 @@ class Controller(object):
                 raise error
 
     def reboot(self, args):
-        domains = self.get_domains()
+        domains = self.get_domains_dict()
         if args["name"] in domains.keys():
             if domains[args["name"]]["status"] == "shutdown":
                 print ("Virtual machine \"{0}"
                        "\" is not running.".format(args["name"]))
             else:
                 print ("Send reboot signal to \"" + args["name"] + "\"...")
-                self.get_connection().lookupByName(args["name"]).destroy()
-                self.get_connection().lookupByName(args["name"]).create()
+                domain = self.get_connection().lookupByName(args["name"])
+                domain.destroy()
+                domain.create()
+                self.sql_control.add_record(
+                    Action.reboot_vm(domain.UUIDString()))
         else:
             error = NotCreatedVMError(args["name"])
             print error
@@ -122,18 +148,18 @@ class Controller(object):
         print "id" + vert_delimiter + "Status" + vert_delimiter + "Domain"
         print hor_delimiter
 
-        domains = self.get_domains()
+        domains = self.get_domains_dict()
         for name in domains.keys():
             if domains[name]["status"] == "shutdown" and \
-                args["select"] == "all" or \
-                    domains[name]["status"] != "shutdown":
+                            args["select"] == "all" or \
+                            domains[name]["status"] != "shutdown":
                 print "{1}{0}{2}{0}{3}".format(vert_delimiter,
                                                domains[name]["id"],
                                                domains[name]["status"],
                                                domains[name]["name"])
 
     def create(self, args):
-        domains = self.get_domains()
+        domains = self.get_domains_dict()
         if args["name"] in domains.keys():
             error = AlreadyCreatedVMError(args["name"])
             print error
@@ -141,7 +167,7 @@ class Controller(object):
                 raise error
         else:
             domain = Domain(args["name"], args["memory"], args["uuid"],
-                            args["vcpu"],args["os_type"], args["type_arch"],
+                            args["vcpu"], args["os_type"], args["type_arch"],
                             args["type_machine"], args["clock_offset"],
                             args["domain_type"], args["emulator"])
             if "disks" in args and args["disks"] is not None:
@@ -159,15 +185,19 @@ class Controller(object):
 
             print ("Try to create \"" + domain.name + "\"")
             self.get_connection().defineXML(xml_to_string(domain.get_xml()))
+            self.sql_control.add_record(domain)
+            self.sql_control.add_record(Action.create_vm(domain.uuid_str))
 
     def remove(self, args):
-        domains = self.get_domains()
+        domains = self.get_domains_dict()
         if args["name"] in domains.keys():
+            domain = self.get_connection().lookupByName(args["name"])
             if domains[args["name"]]["status"] != "shutdown":
                 print ("Forced stop \"" + args["name"] + "\"...")
-                self.get_connection().lookupByName(args["name"]).destroy()
+                domain.destroy()
             print ("Delete \"" + args["name"] + "\".")
-            self.get_connection().lookupByName(args["name"]).undefine()
+            self.sql_control.add_record(Action.delete_vm(domain.uuid_str))
+            domain.undefine()
         else:
             error = NotCreatedVMError(args["name"])
             print error
@@ -175,7 +205,7 @@ class Controller(object):
                 raise error
 
     def info(self, args):
-        domains = self.get_domains()
+        domains = self.get_domains_dict()
         if args["name"] in domains.keys():
             infos = self.get_connection().lookupByName(args["name"]).info()
             domain_info = {"name": args["name"],
