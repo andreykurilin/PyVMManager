@@ -8,7 +8,7 @@ __version__ = "1.0"
 _uri = "qemu:///system"
 
 
-def main():
+def get_parser():
     parser = argparse.ArgumentParser(
         description='Py util that help manage'
                     '(create/delete/start/shutdown/reboot) VM.',
@@ -17,28 +17,28 @@ def main():
 
     start_parser = action_parser.add_parser('start', help='Start VM')
     start_parser.add_argument('name', help='name of VM')
-    start_parser.set_defaults(handler=Controller.start)
+    start_parser.set_defaults(handler="start")
 
     stop_parser = action_parser.add_parser('stop', help='Stop VM')
     stop_parser.add_argument('name', help='name of VM')
-    stop_parser.set_defaults(handler=Controller.stop)
+    stop_parser.set_defaults(handler="stop")
 
     fstop_parser = action_parser.add_parser('fstop', help='Forced stop VM')
     fstop_parser.add_argument('name', help='name of VM')
-    fstop_parser.set_defaults(handler=Controller.forced_stop)
+    fstop_parser.set_defaults(handler="forced_stop")
 
     fstop_parser = action_parser.add_parser('reboot', help='Restart VM')
     fstop_parser.add_argument('name', help='name of VM')
-    fstop_parser.set_defaults(handler=Controller.reboot)
+    fstop_parser.set_defaults(handler="reboot")
 
     info_parser = action_parser.add_parser('info', help='Show VM info')
     info_parser.add_argument('name', help='name of VM')
-    info_parser.set_defaults(handler=Controller.show_info)
+    info_parser.set_defaults(handler="show_info")
 
     list_parser = action_parser.add_parser('list', help='Displays VM')
     list_parser.add_argument("select", choices=['run', 'all'],
                              metavar="run/all")
-    list_parser.set_defaults(handler=Controller.list)
+    list_parser.set_defaults(handler="list")
 
     install_parser = action_parser.add_parser('install', help='Install new VM')
     install_parser.add_argument("-n", "--name", dest='name',
@@ -58,7 +58,8 @@ def main():
                                 help='specify type of OS. Default=\"x86_64\"',
                                 default="x86_64")
     install_parser.add_argument("-T", "--type_machine", dest='type_machine',
-                                help='specify type of machine. Default=\"pc-1.0\"',
+                                help='specify type of machine. '
+                                     'Default=\"pc-1.0\"',
                                 default="pc-1.0")
     install_parser.add_argument("-C", "--clock_offset", dest='clock_offset',
                                 help='specify clock offset. Default=\"utc\"',
@@ -67,7 +68,8 @@ def main():
                                 help='specify type of domain. Default=\"kvm\"',
                                 default="kvm")
     install_parser.add_argument("-e", "--emulator", dest='emulator',
-                                help='specify emulator. Default=\"/usr/bin/kvm\"',
+                                help='specify emulator. '
+                                     'Default=\"/usr/bin/kvm\"',
                                 default="/usr/bin/kvm")
     install_parser.add_argument("-D", "--disk", dest='disks', help='add disk',
                                 default=None, nargs='+')
@@ -80,22 +82,28 @@ def main():
     install_parser.add_argument("-b", "--bridge", dest='bridges',
                                 help='add bridges',
                                 default=None, nargs='+')
-    install_parser.set_defaults(handler=Controller.create)
+    install_parser.set_defaults(handler="create")
 
     remove_parser = action_parser.add_parser('delete', help='Delete VM')
     remove_parser.add_argument('vm_name', help='name of VM')
-    remove_parser.set_defaults(handler=Controller.remove)
+    remove_parser.set_defaults(handler="remove")
 
     parser.add_argument("-c", "--connect", dest="uri",
                         help="Connect to the specified URI, "
                              "instead of the default connection.")
-    args = parser.parse_args()
+    return parser
+
+
+def main():
+    args = get_parser().parse_args()
 
     if args.uri is None:
         args.uri = _uri
 
     dom_controller = Controller(_uri)
-    args.handler(dom_controller, vars(args))
+    func = dom_controller.__getattribute__(args.handler)
+    func(vars(args))
+
 
 if __name__ == "__main__":
     main()

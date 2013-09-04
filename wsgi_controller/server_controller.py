@@ -13,6 +13,14 @@ __author__ = 'akurilin'
 _uri = "qemu:///system"
 
 
+def data_to_dictionary(data):
+        request_dict = {}
+        for each in str(data).split("&"):
+            lst = each.split("=")
+            request_dict[lst[0]] = lst[1]
+        return request_dict
+
+
 def ok_200(environ, start_response, message=None):
     start_response('200 Ok', [])
     if message is None:
@@ -53,14 +61,6 @@ class Route(object):
 
 
 class Controller(controller.Controller):
-    @staticmethod
-    def data_to_dictionary(data):
-        request_dict = {}
-        for each in str(data).split("&"):
-            lst = each.split("=")
-            request_dict[lst[0]] = lst[1]
-        return request_dict
-
     def __init__(self, uri=_uri):
         super(Controller, self).__init__(uri, error_flag=True)
         self.routes = []
@@ -73,7 +73,7 @@ class Controller(controller.Controller):
         for route in self.routes:
             if route.method == req.method and route.url == req.path_info:
                 for arg in route.valid_args:
-                    if arg not in self.data_to_dictionary(req.body).keys():
+                    if arg not in data_to_dictionary(req.body).keys():
                         return error_400_response(environ, start_response,
                                                   "Not enough args.")
                 return route.func(environ, start_response)
@@ -82,7 +82,7 @@ class Controller(controller.Controller):
     def start(self, environ, start_response):
         req = Request(environ)
         try:
-            super(Controller, self).start(self.data_to_dictionary(req.body))
+            super(Controller, self).start(data_to_dictionary(req.body))
         except NotCreatedVMError as error:
             return error_400_response(environ, start_response, error.__str__())
         return ok_200(environ, start_response)
@@ -90,7 +90,7 @@ class Controller(controller.Controller):
     def stop(self, environ, start_response):
         req = Request(environ)
         try:
-            super(Controller, self).stop(self.data_to_dictionary(req.body))
+            super(Controller, self).stop(data_to_dictionary(req.body))
         except (NotCreatedVMError, NotRunningError) as error:
             return error_400_response(environ, start_response, error.__str__())
         return ok_200(environ, start_response)
@@ -99,7 +99,7 @@ class Controller(controller.Controller):
         req = Request(environ)
         try:
             super(Controller, self). \
-                forced_stop(self.data_to_dictionary(req.body))
+                forced_stop(data_to_dictionary(req.body))
         except (NotCreatedVMError, NotRunningError) as error:
             return error_400_response(environ, start_response, error.__str__())
         return ok_200(environ, start_response)
@@ -108,7 +108,7 @@ class Controller(controller.Controller):
         req = Request(environ)
         try:
             super(Controller, self). \
-                reboot(self.data_to_dictionary(req.body))
+                reboot(data_to_dictionary(req.body))
         except (NotCreatedVMError, NotRunningError) as error:
             return error_400_response(environ, start_response, error.__str__())
         return ok_200(environ, start_response)
@@ -116,7 +116,7 @@ class Controller(controller.Controller):
     def list(self, environ, start_response):
         req = Request(environ)
         domains = self.get_domains_dict()
-        args = self.data_to_dictionary(req.body)
+        args = data_to_dictionary(req.body)
         if "select" in args and args["select"] == "run":
             for key in domains.keys():
                 if domains[key]["status"] == "shutdown":
@@ -127,7 +127,7 @@ class Controller(controller.Controller):
 
     def create(self, environ, start_response):
         req = Request(environ)
-        args = self.data_to_dictionary(req.body)
+        args = data_to_dictionary(req.body)
         for key in Domain.DEFAULT_VALUES:
             if key not in args:
                 args[key] = Domain.DEFAULT_VALUES[key]
@@ -142,7 +142,7 @@ class Controller(controller.Controller):
     def remove(self, environ, start_response):
         req = Request(environ)
         try:
-            super(Controller, self).remove(self.data_to_dictionary(req.body))
+            super(Controller, self).remove(data_to_dictionary(req.body))
         except NotCreatedVMError as error:
             return error_400_response(environ, start_response, error.__str__())
         return ok_200(environ, start_response)
@@ -151,7 +151,7 @@ class Controller(controller.Controller):
         req = Request(environ)
         try:
             domain_info = super(Controller, self).\
-                info(self.data_to_dictionary(req.body))
+                info(data_to_dictionary(req.body))
         except NotCreatedVMError as error:
             return error_400_response(environ, start_response, error.__str__())
         return ok_200(environ, start_response, json.dumps(domain_info))
