@@ -6,19 +6,19 @@ import time
 import atexit
 from signal import SIGTERM
 from domain_controller.controller import Controller
+from sql_controller.controller import Controller as SQLController
 from settings import conf
 
 
 class Daemon:
     def __init__(self, pidfile="/var/run/pyvm.pid", stdin='/dev/null',
                  stdout='/dev/null',
-                 stderr='/dev/null', interval=30, uri=conf.General["uri"]):
+                 stderr='/dev/null', interval=30):
         self.stdin = stdin
         self.stdout = stdout
         self.stderr = stderr
         self.pidfile = pidfile
         self.interval = interval
-        self.controller = Controller(uri)
 
     def daemonize(self):
         try:
@@ -106,10 +106,9 @@ class Daemon:
         self.start()
 
     def run(self):
-        sql_ctrl = self.controller.sql_control
+        sql_ctrl = SQLController()
         while True:
-            sql_ctrl.test_domain_table(self.controller.get_domains_list())
-            sql_ctrl.test_state_table()
+            sql_ctrl.test_domain_tables()
             time.sleep(self.interval)
 
 

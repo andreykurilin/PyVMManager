@@ -35,7 +35,8 @@ class Domain(Base):
                       "domain_type": None,
                       "emulator": None}
 
-    def __init__(self, name, memory, state=DEFAULT_VALUES["state"],
+    def __init__(self, name, memory, host_id=1,
+                 state=DEFAULT_VALUES["state"],
                  uuid_str=DEFAULT_VALUES["uuid"],
                  vcpu=DEFAULT_VALUES["vcpu"],
                  os_type=DEFAULT_VALUES["os_type"],
@@ -62,7 +63,7 @@ class Domain(Base):
         self.disks = []
         self.nets = []
         self.state_id = state
-        self.host_id = 1
+        self.host_id = host_id
 
     def add_disk(self, source_file, device):
         if device == "cdrom":

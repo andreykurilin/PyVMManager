@@ -3,8 +3,8 @@ import libvirt
 from domain_controller.disk import Disk
 from domain_controller.domain import Domain
 from network import Network
-import sql_controller.controller as sql_controller
-from sql_controller.tables import *
+#import sql_controller.controller as sql_controller
+#from sql_controller.tables import *
 from xml_utils import xml_to_string
 from settings import conf
 
@@ -26,8 +26,6 @@ class Controller(object):
         self.error_flag = error_flag
         self.connection = None
         self.connection = self.get_connection()
-        self.sql_control = sql_controller.Controller()
-        self.sql_control.test_domain_table(self.get_domains_list())
         Domain.DEFAULT_VALUES = conf.Domain
         Disk.valid_types = conf.Disk["valid_types"]
         Disk.valid_devices = conf.Disk["valid_devices"]
@@ -75,8 +73,6 @@ class Controller(object):
                 print ("Starting \"" + args["name"] + "\"...")
                 domain = self.get_connection().lookupByName(args["name"])
                 domain.create()
-                self.sql_control.add_record(
-                    Action.start_vm(domain.UUIDString()))
         else:
             error = NotCreatedVMError(args["name"])
             print error
@@ -95,8 +91,6 @@ class Controller(object):
                 print ("Try to stop \"{0}\"...".format(args["name"]))
                 domain = self.get_connection().lookupByName(args["name"])
                 domain.shutdown()
-                self.sql_control.add_record(
-                    Action.stop_vm(domain.UUIDString()))
         else:
             error = NotCreatedVMError(args["name"])
             print error
@@ -113,8 +107,6 @@ class Controller(object):
                 print ("Forced stop \"{0}\"...".format(args["name"]))
                 domain = self.get_connection().lookupByName(args["name"])
                 domain.destroy()
-                self.sql_control.add_record(
-                    Action.forced_stop_vm(domain.UUIDString()))
         else:
             error = NotCreatedVMError(args["name"])
             print error
@@ -132,8 +124,6 @@ class Controller(object):
                 domain = self.get_connection().lookupByName(args["name"])
                 domain.destroy()
                 domain.create()
-                self.sql_control.add_record(
-                    Action.reboot_vm(domain.UUIDString()))
         else:
             error = NotCreatedVMError(args["name"])
             print error
@@ -185,8 +175,6 @@ class Controller(object):
 
             print ("Try to create \"" + domain.name + "\"")
             self.get_connection().defineXML(xml_to_string(domain.get_xml()))
-            self.sql_control.add_record(domain)
-            self.sql_control.add_record(Action.create_vm(domain.uuid_str))
 
     def remove(self, args):
         domains = self.get_domains_dict()
@@ -196,7 +184,6 @@ class Controller(object):
                 print ("Forced stop \"" + args["name"] + "\"...")
                 domain.destroy()
             print ("Delete \"" + args["name"] + "\".")
-            self.sql_control.add_record(Action.delete_vm(domain.uuid_str))
             domain.undefine()
         else:
             error = NotCreatedVMError(args["name"])
