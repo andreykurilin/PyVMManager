@@ -4,7 +4,7 @@ from sqlalchemy import *
 
 from sqlalchemy.orm import *
 from sql_controller.tables import *
-from settings import conf
+from utils.settings import conf
 from domain_controller.domain import Domain
 from domain_controller.controller import Controller as DOMController
 
@@ -36,7 +36,7 @@ class Controller(object):
             hosts.append(host)
         return hosts
 
-    def test_domain_table(self, domains_list, host_id=1):
+    def check_domain_table(self, domains_list, host_id=1):
         dom_bd = {}
         for dom in self.session.query(Domain):
             dom_bd[dom.uuid_str] = dom
@@ -46,9 +46,9 @@ class Controller(object):
                                 uuid_str=dom.UUIDString(),
                                 state=dom.info()[0], host_id=host_id)
                 self.add_record(domain)
-                self.add_record(Action("Added to BD.", domain.uuid_str))
+                self.add_record(Action("Added to db.", domain.uuid_str))
             elif dom.info()[0] != dom_bd[dom.UUIDString()].state_id:
-                action = Action("Daemon: state is changed from {0} to {1}".
+                action = Action("State is changed from {0} to {1}".
                                 format(dom_bd[dom.UUIDString()].state_id,
                                        dom.info()[0]), dom.UUIDString())
                 self.add_record(action)
@@ -57,13 +57,13 @@ class Controller(object):
                     update({"state_id": dom.info()[0]})
                 self.session.commit()
 
-    def test_domain_tables(self):
+    def check_domain_tables(self):
         bd_domains = {}
         for dom in self.session.query(Domain):
             bd_domains[dom.uuid_str] = dom
         for host in self.get_hosts():
             ctrl = DOMController(host.name)
-            self.test_domain_table(ctrl.get_domains_list(), host.id)
+            self.check_domain_table(ctrl.get_domains_list(), host.id)
 
     def test_state_tables(self):
         bd_states = {}

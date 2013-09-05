@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from domain_controller.disk import *
 from network import Network
 from sql_controller.tables import Base
-from xml_utils import *
+from utils.xml_shaper import *
 
 
 __author__ = 'akurilin'

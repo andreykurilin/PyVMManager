@@ -3,10 +3,8 @@ import libvirt
 from domain_controller.disk import Disk
 from domain_controller.domain import Domain
 from network import Network
-#import sql_controller.controller as sql_controller
-#from sql_controller.tables import *
-from xml_utils import xml_to_string
-from settings import conf
+from utils.xml_shaper import xml_to_string
+from utils.settings import conf
 
 __author__ = 'akurilin'
 
@@ -45,8 +43,8 @@ class Controller(object):
 
     def get_domains_list(self):
         domains_list = []
-        for id in self.get_connection().listDomainsID():
-            domains_list.append(self.get_connection().lookupByID(id))
+        for domain_id in self.get_connection().listDomainsID():
+            domains_list.append(self.get_connection().lookupByID(domain_id))
         for defined_domain in self.get_connection().listDefinedDomains():
             domains_list.append(
                 self.get_connection().lookupByName(defined_domain))
@@ -54,9 +52,9 @@ class Controller(object):
 
     def get_domains_dict(self):
         domains_dict = {}
-        for id in self.get_connection().listDomainsID():
-            domain = self.get_connection().lookupByID(id)
-            domains_dict[domain.name()] = {"status": "running", "id": id,
+        for dom_id in self.get_connection().listDomainsID():
+            domain = self.get_connection().lookupByID(dom_id)
+            domains_dict[domain.name()] = {"status": "running", "id": dom_id,
                                            "name": domain.name()}
         for defined_domain in self.get_connection().listDefinedDomains():
             domains_dict[defined_domain] = {"status": "shutdown", "id": "-",
@@ -194,12 +192,13 @@ class Controller(object):
     def info(self, args):
         domains = self.get_domains_dict()
         if args["name"] in domains.keys():
-            infos = self.get_connection().lookupByName(args["name"]).info()
+            dom = self.get_connection().lookupByName(args["name"])
+            infos = dom.info()
             domain_info = {"name": args["name"],
                            "state": infos[0],
                            "memory": infos[1],
                            "vcpu": infos[3],
-                           "cpu_time": infos[2]}
+                           "uuid": dom.UUIDString()}
             return domain_info
         else:
             error = NotCreatedVMError(args["name"])
@@ -210,10 +209,10 @@ class Controller(object):
     def show_info(self, args):
         domain_info = self.info(args)
         print 'Name =  %s' % domain_info["name"]
+        print 'UUID =  %s' % domain_info["uuid"]
         print 'State = %d' % domain_info["state"]
         print 'Max Memory = %d' % domain_info["memory"]
         print 'Number of virt CPUs = %d' % domain_info["vcpu"]
-        print 'CPU Time (in ns) = %d' % domain_info["cpu_time"]
 
 
 class ConnectionError(Exception):

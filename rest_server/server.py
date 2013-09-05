@@ -1,13 +1,13 @@
 #!/usr/bin/env python
-from wsgi_controller import server_controller
-from settings import conf
+from controller import Controller
+from utils.settings import conf
 
 __author__ = 'akurilin'
 _server_address = conf.Server["address"]
 _server_port = int(conf.Server["port"])
 
 if __name__ == '__main__':
-    app = server_controller.Controller()
+    app = Controller()
     app.add_route("POST", "/start", app.start, ["name"])
     app.add_route("POST", "/stop", app.stop, ["name"])
     app.add_route("POST", "/fstop", app.forced_stop, ["name"])

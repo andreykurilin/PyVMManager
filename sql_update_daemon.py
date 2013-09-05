@@ -5,9 +5,7 @@ import os
 import time
 import atexit
 from signal import SIGTERM
-from domain_controller.controller import Controller
 from sql_controller.controller import Controller as SQLController
-from settings import conf
 
 
 class Daemon:
@@ -108,7 +106,7 @@ class Daemon:
     def run(self):
         sql_ctrl = SQLController()
         while True:
-            sql_ctrl.test_domain_tables()
+            sql_ctrl.check_domain_tables()
             time.sleep(self.interval)
 
 
