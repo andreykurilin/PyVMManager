@@ -6,10 +6,7 @@ import time
 import atexit
 from signal import SIGTERM
 from server.db.controller import Controller as SQLController
-from server.utils.settings import Settings
 from server.dnsmasq_controller import Controller as DHCPController
-
-conf = Settings(os.path.join(os.path.dirname(__file__), "settings.ini"))
 
 
 class Daemon:

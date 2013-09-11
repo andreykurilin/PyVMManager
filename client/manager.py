@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import os
-from domain_controller.controller import Controller
+from server.domain_controller.controller import Controller
 from server.utils.settings import Settings
 
 __author__ = 'akurilin'
