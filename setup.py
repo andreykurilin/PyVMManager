@@ -6,18 +6,17 @@ from setuptools import setup, find_packages
 
 setup(
     name='PyVMManager',
-    version='1.3',
+    version='1.5.5',
     description="Py util that help manage"
                 "(create/delete/start/shutdown/reboot) VM.",
     author=__author__,
     packages=find_packages(),
-    py_modules=['manager', 'sql_update_daemon'],
     entry_points={
         'console_scripts': [
-            'pyvm-manager = manager:main',
-            'pyvm-server = rest_server.server:main',
-            'pyvm-rest = rest_client.client:main',
-            'pyvmd = sql_update_daemon:main',
+            'pyvm-manager = client.manager:main',
+            'pyvm-manager-rest = client.rest.manager:main',
+            'pyvm-rest-server = server.rest.server:main',
+            'pyvmd = server.update_daemon:main',
         ]
     },
     platforms='any',

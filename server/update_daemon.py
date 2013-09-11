@@ -5,16 +5,21 @@ import os
 import time
 import atexit
 from signal import SIGTERM
-from sql_controller.controller import Controller as SQLController
+from server.db.controller import Controller as SQLController
+from server.utils.settings import Settings
+from server.dnsmasq_controller import Controller as DHCPController
+
+conf = Settings(os.path.join(os.path.dirname(__file__), "settings.ini"))
 
 
 class Daemon:
     def __init__(self, pidfile="/var/run/pyvm.pid", stdin='/dev/null',
-                 stdout='/dev/null',
-                 stderr='/dev/null', interval=30):
+                 stdout='/dev/null', stderr='/dev/null', interval=30):
         self.stdin = stdin
         self.stdout = stdout
         self.stderr = stderr
+        #self.stdout = "/darem.log"
+        #self.stderr = "/darem.log"
         self.pidfile = pidfile
         self.interval = interval
 
@@ -105,8 +110,17 @@ class Daemon:
 
     def run(self):
         sql_ctrl = SQLController()
+        dnsmasq_ctrl = DHCPController()
         while True:
             sql_ctrl.check_domain_tables()
+            addresses = sql_ctrl.get_ips()
+            dnsmasq_ctrl.parse_leases()
+            dnsmasq_ctrl.clear_leases()
+            sql_ctrl.check_net_table(dnsmasq_ctrl.address)
+            for ip_address in addresses.keys():
+                dnsmasq_ctrl.add_address(ip_address, addresses[ip_address])
+            dnsmasq_ctrl.write()
+            dnsmasq_ctrl.sighup()
             time.sleep(self.interval)
 
 

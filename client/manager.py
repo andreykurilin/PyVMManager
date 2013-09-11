@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 import argparse
+import os
 from domain_controller.controller import Controller
+from server.utils.settings import Settings
 
 __author__ = 'akurilin'
-__version__ = "1.0"
-
-_uri = "qemu:///system"
+conf = Settings(os.path.join(os.path.dirname(__file__), "settings.ini"))
 
 
 def get_parser():
     parser = argparse.ArgumentParser(
         description='Py util that help manage'
                     '(create/delete/start/shutdown/reboot) VM.',
-        add_help=True, version=__version__)
+        add_help=True)
     action_parser = parser.add_subparsers(metavar="Manage")
 
     start_parser = action_parser.add_parser('start', help='Start VM')
@@ -49,28 +49,26 @@ def get_parser():
     install_parser.add_argument("-u", "--uuid", dest='uuid',
                                 help='specify UUID of VM')
     install_parser.add_argument("-v", "--vcpu", dest='vcpu', type=int,
-                                help='specify vcpu of VM. Default=1',
-                                default=1)
+                                help='specify vcpu of VM.',
+                                default=conf.Domain["vcpu"])
     install_parser.add_argument("-o", "--os_type", dest='os_type',
-                                default="hvm",
-                                help='specify type of OS. Default=\"hvm\"')
+                                default=conf.Domain["os_type"],
+                                help='specify type of OS.')
     install_parser.add_argument("-t", "--os_type_arch", dest='type_arch',
-                                help='specify type of OS. Default=\"x86_64\"',
-                                default="x86_64")
+                                help='specify type of OS.',
+                                default=conf.Domain["type_arch"])
     install_parser.add_argument("-T", "--type_machine", dest='type_machine',
-                                help='specify type of machine. '
-                                     'Default=\"pc-1.0\"',
-                                default="pc-1.0")
+                                help='specify type of machine.',
+                                default=conf.Domain["type_machine"])
     install_parser.add_argument("-C", "--clock_offset", dest='clock_offset',
-                                help='specify clock offset. Default=\"utc\"',
-                                default="utc")
+                                help='specify clock offset.',
+                                default=conf.Domain["clock_offset"])
     install_parser.add_argument("-d", "--domain_type", dest='domain_type',
                                 help='specify type of domain. Default=\"kvm\"',
-                                default="kvm")
+                                default=conf.Domain["domain_type"])
     install_parser.add_argument("-e", "--emulator", dest='emulator',
-                                help='specify emulator. '
-                                     'Default=\"/usr/bin/kvm\"',
-                                default="/usr/bin/kvm")
+                                help='specify emulator.',
+                                default=conf.Domain["emulator"])
     install_parser.add_argument("-D", "--disk", dest='disks', help='add disk',
                                 default=None, nargs='+')
     install_parser.add_argument("-r", "--cdrom", dest='cdroms',
@@ -78,10 +76,10 @@ def get_parser():
                                 default=None, nargs='+')
     install_parser.add_argument("-N", "--network", dest='nets',
                                 help='add networks',
-                                default=None, nargs='+')
+                                default=None)
     install_parser.add_argument("-b", "--bridge", dest='bridges',
                                 help='add bridges',
-                                default=None, nargs='+')
+                                default=None)
     install_parser.set_defaults(handler="create")
 
     remove_parser = action_parser.add_parser('delete', help='Delete VM')
@@ -98,9 +96,9 @@ def main():
     args = get_parser().parse_args()
 
     if args.uri is None:
-        args.uri = _uri
+        args.uri = conf.General["uri"]
 
-    dom_controller = Controller(_uri)
+    dom_controller = Controller(args.uri)
     func = dom_controller.__getattribute__(args.handler)
     func(vars(args))
 
