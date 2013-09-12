@@ -2,10 +2,9 @@
 import argparse
 import os
 from server.domain_controller.controller import Controller
-from server.utils.settings import Settings
+from server.utils.settings import conf
 
 __author__ = 'akurilin'
-conf = Settings(os.path.join(os.path.dirname(__file__), "settings.ini"))
 
 
 def get_parser():

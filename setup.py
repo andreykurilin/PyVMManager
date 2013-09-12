@@ -6,11 +6,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='PyVMManager',
-    version='1.5.5',
+    version='1.5',
     description="Py util that help manage"
                 "(create/delete/start/shutdown/reboot) VM.",
     author=__author__,
     packages=find_packages(),
+    data_files=[('/etc/pyvm/', ['settings.ini'])],
     entry_points={
         'console_scripts': [
             'pyvm-manager = client.manager:main',
