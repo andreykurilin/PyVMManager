@@ -16,12 +16,12 @@ setup(
         'console_scripts': [
             'pyvm-manager = client.manager:main',
             'pyvm-manager-rest = client.rest.manager:main',
-            'pyvm-rest-server = server.rest.server:main',
+            'pyvm-rest-server = server.rest.serv:main',
             'pyvmd = server.update_daemon:main',
         ]
     },
     platforms='any',
     zip_safe=False,
     include_package_data=True,
-    requires=['webob', 'sqlalchemy', 'requests', 'prettytable'],
+    requires=['webob', 'sqlalchemy', 'requests', 'prettytable', 'alembic'],
 )

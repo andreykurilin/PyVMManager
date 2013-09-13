@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import os
 from server.domain_controller.controller import Controller
 from server.utils.settings import conf
 
@@ -45,7 +44,7 @@ def get_parser():
                                 help='name of VM', metavar="VM_NAME")
     install_parser.add_argument("-m", "--memory", dest='memory', type=int,
                                 help='memory of VM in Bytes', required=True)
-    install_parser.add_argument("-u", "--uuid", dest='uuid',
+    install_parser.add_argument("-u", "--uuid", dest='uuid', default=None,
                                 help='specify UUID of VM')
     install_parser.add_argument("-v", "--vcpu", dest='vcpu', type=int,
                                 help='specify vcpu of VM.',
@@ -82,7 +81,7 @@ def get_parser():
     install_parser.set_defaults(handler="create")
 
     remove_parser = action_parser.add_parser('delete', help='Delete VM')
-    remove_parser.add_argument('vm_name', help='name of VM')
+    remove_parser.add_argument('name', help='name of VM')
     remove_parser.set_defaults(handler="remove")
 
     parser.add_argument("-c", "--connect", dest="uri",
