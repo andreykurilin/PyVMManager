@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='PyVMManager',
-    version='1.5',
+    version='1.6',
     description="Py util that help manage"
                 "(create/delete/start/shutdown/reboot) VM.",
     author=__author__,
@@ -14,7 +14,7 @@ setup(
     data_files=[('/etc/pyvm/', ['settings.ini'])],
     entry_points={
         'console_scripts': [
-            'pyvm-manager = client.manager:main',
+            'pyvm-manager = client.cli_manager:main',
             'pyvm-manager-rest = client.rest.manager:main',
             'pyvm-rest-server = server.rest.serv:main',
             'pyvmd = server.update_daemon:main',
@@ -23,5 +23,6 @@ setup(
     platforms='any',
     zip_safe=False,
     include_package_data=True,
-    requires=['webob', 'sqlalchemy', 'requests', 'prettytable', 'alembic'],
+    requires=['webob', 'sqlalchemy', 'requests', 'prettytable', 'alembic',
+              'pika'],
 )
