@@ -24,7 +24,7 @@ def amqp_init(channel=None, host=conf.AMQP["host"],
 
 
 class Controller(object):
-    def __init__(self, queue, respond=False):
+    def __init__(self, queue, respond=False, no_ack=False):
         self.queue = queue
         self.respond = respond
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(
@@ -32,22 +32,28 @@ class Controller(object):
         self.channel = self.connection.channel()
         amqp_init(self.channel)
         self.channel.basic_qos(prefetch_count=1)
-        self.channel.basic_consume(self.on_request, queue=self.queue)
+        if no_ack:
+            self.channel.basic_consume(self.on_request, queue=self.queue,
+                                       no_ack=True)
+        else:
+            self.channel.basic_consume(self.on_request, queue=self.queue)
 
     def on_request(self, ch, method, props, body):
+        self.result = None
         data = eval(body)
         if "uri" not in data:
             data["uri"] = conf.General["uri"]
         func = self.__getattr__(data["handler"])
-        res = func(data)
-        print " [.] {0} - {1}: {2}".format(self.queue, data["handler"], res)
+        self.result = func(data)
+        print " [.] {0} - {1}: {2}".format(self.queue, data["handler"],
+                                           self.result)
 
         if self.respond:
             ch.basic_publish(exchange="",
                              routing_key=props.reply_to,
                              properties=pika.BasicProperties(
                                  correlation_id=props.correlation_id),
-                             body=str(res))
+                             body=str(self.result))
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
     def start_consuming(self):

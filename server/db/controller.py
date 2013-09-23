@@ -43,6 +43,9 @@ class Controller(object):
             bd_addresses[ip_address.ip] = ip_address.domain_mac
         return bd_addresses
 
+    def add_domain(self):
+        pass
+
     def check_domain_table(self, domains_list, host_id=1):
         dom_db = self.get_domains()
         for dom in domains_list:
