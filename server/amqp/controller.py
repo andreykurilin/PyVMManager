@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import pika
 from server.utils.settings import conf
-from server.domain_controller.controller import AlreadyCreatedVMError, \
-    NotCreatedVMError, ConnectionError, NotRunningError
 
 __author__ = 'akurilin'
 

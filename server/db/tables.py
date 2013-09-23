@@ -70,4 +70,5 @@ class IPAddr(Base):
         self.availability = availability
 
     def __repr__(self):
-        return "<IPAddr('%s', '%s', '%s')>" % (self.ip, self.domain_mac, self.availability)
+        return "<IPAddr('%s', '%s', '%s')>" % (self.ip, self.domain_mac,
+                                               self.availability)

@@ -12,10 +12,7 @@ class Controller(AQMPController):
     def __init__(self):
         super(Controller, self).__init__(Controller._queue, no_ack=True)
 
-    def get_dom_ctrl(self, uri):
-        return DOMController(uri)
-
-    def do_log(self, args):
+    def logging(self, args):
         try:
             f = open(conf.AMQP["log_file"], "a")
             cur_time = str(datetime.now())
@@ -27,8 +24,8 @@ class Controller(AQMPController):
 
     def __getattr__(self, item):
         if item in ("start", "stop", "forced_stop", "reboot", "create",
-                    "remove", "info", "list"):
-            return self.do_log
+                    "remove", "info", "list", "add", "add-range"):
+            return self.logging
 
 
 def main():

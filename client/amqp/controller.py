@@ -9,7 +9,7 @@ __author__ = 'akurilin'
 
 
 class Controller(object):
-    def __init__(self, host):
+    def __init__(self, host, respond=True):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(
             host=host))
         self.channel = self.connection.channel()
@@ -18,6 +18,7 @@ class Controller(object):
         self.callback_queue = result.method.queue
         self.channel.basic_consume(self.on_response, no_ack=True,
                                    queue=self.callback_queue)
+        self.respond = respond
 
     def on_response(self, ch, method, props, body):
         if self.corr_id == props.correlation_id:
@@ -27,7 +28,7 @@ class Controller(object):
         self.response = None
         self.corr_id = str(uuid.uuid4())
 
-        if data["handler"] == "networking":
+        if data["handler"] in ("add", "add-range"):
             rkey = "network"
         else:
             rkey = "manage"
@@ -37,8 +38,9 @@ class Controller(object):
                                        reply_to=self.callback_queue,
                                        correlation_id=self.corr_id,),
                                    body=str(data))
-        while self.response is None:
-            self.connection.process_data_events()
+        if self.respond:
+            while self.response is None:
+                self.connection.process_data_events()
         return self.response
 
     def print_info(self, info):

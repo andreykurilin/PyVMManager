@@ -1,38 +1,36 @@
 #!/usr/bin/env python
-from server.amqp.controller import Controller as AQMPController
-from server.domain_controller.controller import Controller as DOMController
-from server.domain_controller.controller import NotCreatedVMError, \
-    AlreadyCreatedVMError
-
+import server.amqp.controller as amqp_ctrl
+import server.domain_controller.controller as domain_ctrl
 from server.utils.settings import conf
 
 __author__ = 'akurilin'
 
 
-class Controller(AQMPController):
+class Controller(amqp_ctrl.Controller):
     _queue = "manage"
-    _states = {"start": {"message": "Starting...", "error": NotCreatedVMError},
+    _states = {"start": {"message": "Starting...",
+                         "error": domain_ctrl.NotCreatedVMError},
                "stop": {"message": "Try to stop...",
-                        "error": NotCreatedVMError},
+                        "error": domain_ctrl.NotCreatedVMError},
                "forced_stop": {"message": "Forced stop.",
-                               "error": NotCreatedVMError},
+                               "error": domain_ctrl.NotCreatedVMError},
                "reboot": {"message": "Send reboot signal.",
-                          "error": NotCreatedVMError},
+                          "error": domain_ctrl.NotCreatedVMError},
                "create": {"message": "Try to create...",
-                          "error": AlreadyCreatedVMError},
+                          "error": domain_ctrl.AlreadyCreatedVMError},
                "remove": {"message": "Delete",
-                          "error": NotCreatedVMError},
+                          "error": domain_ctrl.NotCreatedVMError},
                "info": {"message": None,
-                          "error": NotCreatedVMError}}
+                        "error": domain_ctrl.NotCreatedVMError}}
 
     def __init__(self):
-        super(Controller, self).__init__(Controller._queue, True)
+        super(Controller, self).__init__(Controller._queue)
 
-    def get_dom_ctrl(self, uri):
-        return DOMController(uri, error_flag=True)
+    def get_domain_ctrl(self, uri):
+        return domain_ctrl.Controller(uri, error_flag=True)
 
     def list(self, args):
-        dom_ctrl = self.get_dom_ctrl(args["uri"])
+        dom_ctrl = self.get_domain_ctrl(args["uri"])
         domains = dom_ctrl.get_domains_dict()
         if args["select"] == "run":
             for name in domains.keys():
@@ -41,7 +39,7 @@ class Controller(AQMPController):
         return domains
 
     def _ctrl_do(self, args):
-        dom_ctrl = self.get_dom_ctrl(args["uri"])
+        dom_ctrl = self.get_domain_ctrl(args["uri"])
         try:
             result = dom_ctrl.__getattribute__(args["handler"])(args)
         except Controller._states[args["handler"]]["error"] as error:
